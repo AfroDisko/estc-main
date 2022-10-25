@@ -8,16 +8,12 @@
 
 void Nblink(int id, int N)
 {
-    for(int cntr = 0; cntr < N - 1; ++cntr)
+    for(int cntr = 0; cntr < 2 * N - 1; ++cntr)
     {
-        bsp_board_led_invert(id);
-        nrf_delay_ms(DELAY_BLINK);
         bsp_board_led_invert(id);
         nrf_delay_ms(DELAY_BLINK);
     }
 
-    bsp_board_led_invert(id);
-    nrf_delay_ms(DELAY_BLINK);
     bsp_board_led_invert(id);
 }
 
