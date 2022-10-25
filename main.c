@@ -6,7 +6,7 @@
 #define DELAY_BLINK 250
 #define DELAY_PAUSE 1000
 
-void Nblink(int idx, int N)
+void nBlink(int idx, int N)
 {
     for(int cntr = 0; cntr < 2 * N - 1; ++cntr)
     {
@@ -29,7 +29,7 @@ int main(void)
     {
         for(int idx = 0; idx < LEDS_NUMBER; ++idx)
         {
-            Nblink(idx, nBlinks[idx]);
+            nBlink(idx, nBlinks[idx]);
             nrf_delay_ms(DELAY_PAUSE);
         }
     }
