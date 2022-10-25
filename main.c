@@ -6,16 +6,16 @@
 #define DELAY_BLINK 250
 #define DELAY_PAUSE 1000
 
-void nBlink(int idx, int N)
+void nBlink(int idx, int n)
 {
-    for(int cntr = 0; cntr < 2 * N - 1; ++cntr)
+    for(int cntr = 0; cntr < 2 * n - 1; ++cntr)
     {
         bsp_board_led_invert(idx);
         nrf_delay_ms(DELAY_BLINK);
     }
 
     // just in case
-    if(N > 0) 
+    if(n > 0) 
         bsp_board_led_invert(idx);
 }
 
