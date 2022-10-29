@@ -1,14 +1,15 @@
-PROJECT_NAME     := blinky_pca10059_mbr
-TARGETS          := nrf52840_xxaa
-OUTPUT_DIRECTORY := _build
+PROJ_NAME        := pca10059
+PROJ_DIR         := ..
+
+SDK_ROOT         ?= ../../esl-nsdk
+OUTPUT_DIRECTORY := $(PROJ_DIR)/_build
 DFU_PACKAGE      := $(OUTPUT_DIRECTORY)/nrf52840_xxaa.dfu
 DFU_PORT         ?= /dev/ttyACM0
 
-SDK_ROOT ?= ../esl-nsdk
-PROJ_DIR := .
+TARGETS          := nrf52840_xxaa
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
-  LINKER_SCRIPT  := blinky_gcc_nrf52.ld
+  LINKER_SCRIPT  := nrf52.ld
 
 # Source files common to all targets
 SRC_FILES += \
@@ -31,6 +32,8 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/soc/nrfx_atomic.c \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(PROJ_DIR)/src/main.c \
+  $(PROJ_DIR)/src/gpio2led.c \
+  $(PROJ_DIR)/src/switch2gpio.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
