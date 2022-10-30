@@ -39,3 +39,8 @@ void gpio2ledSwitchLED(char color, gpio2ledState state)
 {
     nrf_gpio_pin_write(color2pin(color), state == gpio2led_ON ? 0 : 1);
 }
+
+gpio2ledState gpio2ledReadLEDState(char color)
+{
+    return nrf_gpio_pin_out_read(color2pin(color)) == 0 ? gpio2led_ON : gpio2led_OFF;
+}

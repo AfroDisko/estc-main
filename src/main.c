@@ -5,7 +5,7 @@
 #include "gpio2led.h"
 #include "switch2gpio.h"
 
-#define DELAY_BLINK 1000
+#define DELAY_BLINK 500
 
 int main(void)
 {
@@ -19,12 +19,12 @@ int main(void)
 
     while(true)
     {
-        if(switch2gpioReadSwitchState())
+        if(switch2gpioReadSwitchState() && gpio2ledReadLEDState(patern[currIdx]) == gpio2led_OFF)
         {
             gpio2ledSwitchLED(patern[currIdx], gpio2led_ON);
             nrf_delay_ms(DELAY_BLINK);
         }
-        if(switch2gpioReadSwitchState())
+        if(switch2gpioReadSwitchState() && gpio2ledReadLEDState(patern[currIdx]) == gpio2led_ON)
         {
             gpio2ledSwitchLED(patern[currIdx], gpio2led_OFF);
             ++currIdx;

@@ -25,4 +25,6 @@ uint32_t color2pin(char color);
 
 void gpio2ledSwitchLED(char color, gpio2ledState state);
 
+gpio2ledState gpio2ledReadLEDState(char color);
+
 #endif
