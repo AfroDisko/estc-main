@@ -58,7 +58,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/memobj \
   $(SDK_ROOT)/external/fprintf \
   $(SDK_ROOT)/components/libraries/log/src \
-  $(PROJ_DIR)/config \
+  $(PROJ_DIR)/cfg \
   $(PROJ_DIR)/src \
 
 # Libraries common to all targets
