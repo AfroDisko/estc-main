@@ -12,21 +12,23 @@ int main(void)
     switch2gpioSetupSwitch();
     gpio2ledSetupLEDs();
 
-    const char patern[] = "YRGB";
+    const char patern[] = "YYYYYYYRGGGGGGGGGBBBBBBB";
     const int paternLength = strlen(patern);
     
     int currIdx = 0;
 
     while(true)
     {
-        if(switch2gpioReadSwitchState() && gpio2ledReadLEDState(patern[currIdx]) == gpio2led_OFF)
+        if(switch2gpioGetSwitchState() == LogicalStateON &&
+           gpio2ledGetLEDState(patern[currIdx]) == LogicalStateOFF)
         {
-            gpio2ledSwitchLED(patern[currIdx], gpio2led_ON);
+            gpio2ledSetLEDState(patern[currIdx], LogicalStateON);
             nrf_delay_ms(DELAY_BLINK);
         }
-        if(switch2gpioReadSwitchState() && gpio2ledReadLEDState(patern[currIdx]) == gpio2led_ON)
+        if(switch2gpioGetSwitchState() == LogicalStateON &&
+           gpio2ledGetLEDState(patern[currIdx]) == LogicalStateON)
         {
-            gpio2ledSwitchLED(patern[currIdx], gpio2led_OFF);
+            gpio2ledSetLEDState(patern[currIdx], LogicalStateOFF);
             ++currIdx;
             if(currIdx == paternLength)
                 currIdx = 0;
