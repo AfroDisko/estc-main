@@ -1,6 +1,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "app_timer.h"
+#include "drv_rtc.h"
+
 #include "gpio2led.h"
 #include "switch2gpio.h"
 #include "switch2gpiote.h"
@@ -18,6 +21,7 @@ void evtHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
 int main(void)
 {
+    app_timer_init();
     nrfx_gpiote_init();
     switch2gpioSetupSwitch();
     gpio2ledSetupLEDs();
