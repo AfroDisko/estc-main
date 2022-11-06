@@ -27,7 +27,6 @@ int main(void)
     gpio2ledSetupLEDs();
 
     nrfx_gpiote_in_config_t configSW1 = NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(true);
-    configSW1.pull = NRF_GPIO_PIN_PULLUP;
 
     switch2gpioteSetupSwitch(&configSW1, evtHandlerSW1);
     switch2gpioteEventEnable(true);
