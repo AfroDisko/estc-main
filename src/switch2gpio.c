@@ -7,7 +7,7 @@
 
 void switch2gpioSetupSwitch()
 {
-    nrf_gpio_cfg_input(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), GPIO_PIN_CNF_PULL_Pullup);
+    nrf_gpio_cfg_input(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), NRF_GPIO_PIN_PULLUP);
 }
 
 LogicalState switch2gpioGetSwitchState()
