@@ -35,6 +35,7 @@ SRC_FILES += \
   $(PROJ_DIR)/src/main.c \
   $(PROJ_DIR)/src/gpio2led.c \
   $(PROJ_DIR)/src/switch2gpio.c \
+  $(PROJ_DIR)/src/switch2gpiote.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
