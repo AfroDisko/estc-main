@@ -1,4 +1,5 @@
 #include "nrf_gpio.h"
+
 #include "switch2gpio.h"
 
 #define SW1_PRT 1

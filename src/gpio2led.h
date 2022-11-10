@@ -2,6 +2,7 @@
 #define GPIO2LED_H
 
 #include <stdint.h>
+
 #include "common.h"
 
 uint32_t color2pin(char color);
