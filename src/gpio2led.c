@@ -30,7 +30,7 @@ uint32_t color2pin(char color)
     }
 }
 
-void gpio2ledResetPins()
+void gpio2ledResetPins(void)
 {
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN), 1);
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN), 1);
@@ -38,7 +38,7 @@ void gpio2ledResetPins()
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN), 1);
 }
 
-void gpio2ledSetupLEDs()
+void gpio2ledSetupLEDs(void)
 {
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN));

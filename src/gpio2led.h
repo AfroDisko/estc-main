@@ -6,9 +6,9 @@
 
 uint32_t color2pin(char color);
 
-void gpio2ledResetPins();
+void gpio2ledResetPins(void);
 
-void gpio2ledSetupLEDs();
+void gpio2ledSetupLEDs(void);
 
 void gpio2ledSetLEDState(char color, LogicalState state);
 
