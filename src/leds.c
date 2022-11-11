@@ -1,6 +1,6 @@
 #include "nrf_gpio.h"
 
-#include "gpio2led.h"
+#include "leds.h"
 
 #define LED1_Y_PRT 0
 #define LED1_Y_PIN 6
@@ -14,7 +14,7 @@
 #define LED2_B_PRT 0
 #define LED2_B_PIN 12
 
-uint32_t color2pin(char color)
+uint32_t ledsColorToPin(char color)
 {
     switch(color)
     {
@@ -31,7 +31,7 @@ uint32_t color2pin(char color)
     }
 }
 
-void gpio2ledResetPins(void)
+void ledsResetPins(void)
 {
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN), 1);
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN), 1);
@@ -39,22 +39,22 @@ void gpio2ledResetPins(void)
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN), 1);
 }
 
-void gpio2ledSetupLEDs(void)
+void ledsSetupLEDs(void)
 {
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_G_PRT, LED2_G_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN));
 
-    gpio2ledResetPins();
+    ledsResetPins();
 }
 
-void gpio2ledSetLEDState(char color, LogicalState state)
+void ledsSetLEDState(char color, LogicalState state)
 {
-    nrf_gpio_pin_write(color2pin(color), state == LogicalStateON ? 0 : 1);
+    nrf_gpio_pin_write(ledsColorToPin(color), state == LogicalStateOn ? 0 : 1);
 }
 
-LogicalState gpio2ledGetLEDState(char color)
+LogicalState ledsGetLEDState(char color)
 {
-    return nrf_gpio_pin_out_read(color2pin(color)) == 0 ? LogicalStateON : LogicalStateOFF;
+    return nrf_gpio_pin_out_read(ledsColorToPin(color)) == 0 ? LogicalStateOn : LogicalStateOff;
 }

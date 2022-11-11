@@ -3,8 +3,8 @@
 
 typedef enum
 {
-    LogicalStateOFF,
-    LogicalStateON
+    LogicalStateOff,
+    LogicalStateOn
 } LogicalState;
 
 #endif

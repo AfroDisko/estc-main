@@ -14,9 +14,9 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 # Source files common to all targets
 SRC_FILES += \
   $(PROJ_DIR)/src/main.c \
-  $(PROJ_DIR)/src/gpio2led.c \
-  $(PROJ_DIR)/src/switch2gpio.c \
-  $(PROJ_DIR)/src/eventQueue.c \
+  $(PROJ_DIR)/src/queue.c \
+  $(PROJ_DIR)/src/switch.c \
+  $(PROJ_DIR)/src/leds.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/components/boards/boards.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
