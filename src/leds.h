@@ -17,9 +17,11 @@ void ledsResetPins(void);
 
 void ledsSetupLEDs(void);
 
+void ledsSetDutyCycle(float dutyCycle);
+
 void ledsFlashingStart(char color);
 
-void ledsFlashingStop(char color);
+void ledsFlashingStop(void);
 
 void ledsHandlerGenerator(nrf_timer_event_t event_type, void* p_context);
 

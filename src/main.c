@@ -26,13 +26,12 @@ int main(void)
     {
         switch(queueEventDequeue())
         {
-        case DummyEvent:
-            break;
         case SW1PressedSingle:
             ledsFlashingStart('Y');
             break;
         case SW1PressedDouble:
             ledsSetLEDState('R', LogicalStateOn);
+            ledsSetDutyCycle(0.001);
             break;
         case SW1Released:
             switchExpectPressDouble();
