@@ -6,7 +6,8 @@
 typedef enum
 {
     DummyEvent,
-    SW1Pressed,
+    SW1PressedSingle,
+    SW1PressedDouble,
     SW1Released
 } Event;
 

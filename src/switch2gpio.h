@@ -10,6 +10,8 @@
 
 APP_TIMER_DEF(switch2gpioTimerDebounce);
 
+APP_TIMER_DEF(switch2gpioTimerDouble);
+
 void switch2gpioSetupSwitch(void);
 
 LogicalState switch2gpioGetSwitchState(void);
