@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "app_timer.h"
+
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "nrf_log_backend_usb.h"
@@ -11,14 +13,14 @@
 
 int main(void)
 {   
-    app_timer_init();
+    NRF_LOG_INIT(NULL);
+    NRF_LOG_DEFAULT_BACKENDS_INIT();
+
     nrfx_gpiote_init();
+    app_timer_init();
 
     switchSetupSwitch();
     ledsSetupLEDs();
-
-    APP_ERROR_CHECK(NRF_LOG_INIT(NULL));
-    NRF_LOG_DEFAULT_BACKENDS_INIT();
 
     while(true)
     {
@@ -27,15 +29,16 @@ int main(void)
         case DummyEvent:
             break;
         case SW1PressedSingle:
-            ledsSetLEDState('Y', LogicalStateOn);
+            ledsFlashingStart('Y');
             break;
         case SW1PressedDouble:
             ledsSetLEDState('R', LogicalStateOn);
             break;
         case SW1Released:
             switchExpectPressDouble();
-            ledsSetLEDState('Y', LogicalStateOff);
             ledsSetLEDState('R', LogicalStateOff);
+            break;
+        default:
             break;
         }
 

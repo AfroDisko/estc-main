@@ -1,3 +1,5 @@
+#include "app_timer.h"
+
 #include "switch.h"
 #include "queue.h"
 
@@ -9,6 +11,11 @@
 APP_TIMER_DEF(switchTimerDebounce);
 
 APP_TIMER_DEF(switchTimerPressDouble);
+
+LogicalState switchGetSwitchState(void)
+{
+    return nrf_gpio_pin_read(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN)) == 0 ? LogicalStateOn : LogicalStateOff;
+}
 
 void switchSetupSwitchEvent(nrfx_gpiote_in_config_t* config, nrfx_gpiote_evt_handler_t handler)
 {
@@ -31,11 +38,6 @@ void switchSetupSwitch(void)
 
     app_timer_create(&switchTimerDebounce, APP_TIMER_MODE_SINGLE_SHOT, switchHandlerDebounce);
     app_timer_create(&switchTimerPressDouble, APP_TIMER_MODE_SINGLE_SHOT, switchHandlerPressDouble);
-}
-
-LogicalState switchGetSwitchState(void)
-{
-    return nrf_gpio_pin_read(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN)) == 0 ? LogicalStateOn : LogicalStateOff;
 }
 
 void switchExpectPressDouble(void)

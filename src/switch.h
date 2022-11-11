@@ -1,18 +1,17 @@
 #ifndef SWITCH_H
 #define SWITCH_H
 
-#include "app_timer.h"
 #include "nrfx_gpiote.h"
 
 #include "common.h"
+
+LogicalState switchGetSwitchState(void);
 
 void switchSetupSwitchEvent(nrfx_gpiote_in_config_t* config, nrfx_gpiote_evt_handler_t handler);
 
 void switchEnableEvent(bool int_enable);
 
 void switchSetupSwitch(void);
-
-LogicalState switchGetSwitchState(void);
 
 void switchExpectPressDouble(void);
 
