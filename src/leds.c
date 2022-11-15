@@ -1,7 +1,7 @@
 #include <math.h>
 
-#include "app_timer.h"
 #include "nrf_gpio.h"
+#include "nrfx_systick.h"
 
 #include "leds.h"
 
@@ -17,36 +17,24 @@
 #define LED2_B_PRT 0
 #define LED2_B_PIN 12
 
-#define LEDS_GENERATOR_PERIOD_US 1000
-#define LEDS_LED_FLASH_PERIOD_US 500000
+#define GENERATOR_PERIOD_MS 1
+#define LED_BLINK_PERIOD_MS 1000
 
-nrfx_timer_t ledsTimerGenerator = NRFX_TIMER_INSTANCE(3);
-nrfx_timer_config_t ledsTimerGeneratorConfig = NRFX_TIMER_DEFAULT_CONFIG;
+nrfx_timer_t gTimerGenerator = NRFX_TIMER_INSTANCE(3);
+nrfx_timer_config_t gTimerGeneratorConfig = NRFX_TIMER_DEFAULT_CONFIG;
 
-nrfx_timer_t ledsTimerDuty = NRFX_TIMER_INSTANCE(4);
-nrfx_timer_config_t ledsTimerDutyConfig = NRFX_TIMER_DEFAULT_CONFIG;
+nrfx_timer_t gTimerPeriodSmoothBlink = NRFX_TIMER_INSTANCE(4);
+nrfx_timer_config_t gTimerPeriodSmoothBlinkConfig = NRFX_TIMER_DEFAULT_CONFIG;
 
-volatile char gColor;
-volatile float gDutyCycle = 1.f;
+volatile char gLEDColor;
 
-void ledsSetLEDState(char color, LogicalState state)
-{
-    nrf_gpio_pin_write(ledsColorToPin(color), state == LogicalStateOn ? 0 : 1);
-}
-
-LogicalState ledsGetLEDState(char color)
-{
-    return nrf_gpio_pin_out_read(ledsColorToPin(color)) == 0 ? LogicalStateOn : LogicalStateOff;
-}
-
-void ledsSetDutyCycle(float dutyCyle)
-{
-    gDutyCycle = dutyCyle;
-}
+volatile float        gDutyCycle;
+volatile unsigned int gDutyCycleTick;
+volatile bool         gDutyCycleUpdate;
 
 uint32_t ledsColorToPin(char color)
 {
-    switch(color)
+    switch (color)
     {
     case 'Y':
         return NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN);
@@ -61,7 +49,7 @@ uint32_t ledsColorToPin(char color)
     }
 }
 
-void ledsResetPins(void)
+void ledsResetLEDsPins(void)
 {
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN), 1);
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN), 1);
@@ -69,33 +57,29 @@ void ledsResetPins(void)
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN), 1);
 }
 
-void ledsSetupLEDs(void)
+void ledsSetupLEDsGPIO(void)
 {
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED1_Y_PRT, LED1_Y_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_G_PRT, LED2_G_PIN));
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN));
 
-    ledsResetPins();
-
-    nrfx_timer_init(&ledsTimerGenerator, &ledsTimerGeneratorConfig, ledsHandlerGenerator);
-    uint32_t dutyTicks = nrfx_timer_us_to_ticks(&ledsTimerGenerator, LEDS_GENERATOR_PERIOD_US);
-    nrfx_timer_extended_compare(&ledsTimerGenerator, NRF_TIMER_CC_CHANNEL0, dutyTicks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
-    
-    nrfx_timer_init(&ledsTimerDuty, &ledsTimerDutyConfig, ledsHandlerDuty);
+    ledsResetLEDsPins();
 }
 
-void ledsFlashingStart(char color)
+void ledsSetLEDState(char color, LogicalState state)
 {
-    gColor = color;
-    nrfx_timer_enable(&ledsTimerGenerator);
+    nrf_gpio_pin_write(ledsColorToPin(color), state == LogicalStateOn ? 0 : 1);
 }
 
-void ledsFlashingStop(void)
+LogicalState ledsGetLEDState(char color)
 {
-    nrfx_timer_disable(&ledsTimerGenerator);
-    nrfx_timer_disable(&ledsTimerDuty);
-    ledsSetLEDState(gColor, LogicalStateOff);
+    return nrf_gpio_pin_out_read(ledsColorToPin(color)) == 0 ? LogicalStateOn : LogicalStateOff;
+}
+
+void ledsUpdateDutyCycle(void)
+{
+    gDutyCycle = 0.5 - 0.5 * cos(2 * 3.14 * gDutyCycleTick++ * GENERATOR_PERIOD_MS / LED_BLINK_PERIOD_MS);
 }
 
 void ledsHandlerGenerator(nrf_timer_event_t event_type, void* p_context)
@@ -103,25 +87,66 @@ void ledsHandlerGenerator(nrf_timer_event_t event_type, void* p_context)
     switch(event_type)
     {
     case NRF_TIMER_EVENT_COMPARE0:
-        uint32_t dutyTicks = gDutyCycle * nrfx_timer_us_to_ticks(&ledsTimerDuty, LEDS_GENERATOR_PERIOD_US);
-        nrfx_timer_extended_compare(&ledsTimerDuty, NRF_TIMER_CC_CHANNEL0, dutyTicks, NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
-        ledsSetLEDState(gColor, LogicalStateOn);
-        nrfx_timer_enable(&ledsTimerDuty);
+        ledsSetLEDState(gLEDColor, LogicalStateOn);
+        nrfx_systick_delay_us(gDutyCycle * GENERATOR_PERIOD_MS * 1000);
+        ledsSetLEDState(gLEDColor, LogicalStateOff);
+        if(gDutyCycleUpdate)
+            ledsUpdateDutyCycle();
         break;
     default:
         break;
     }
 }
 
-void ledsHandlerDuty(nrf_timer_event_t event_type, void* p_context)
+void ledsHandlerPeriodSmoothBlink(nrf_timer_event_t event_type, void* p_context)
 {
     switch(event_type)
     {
     case NRF_TIMER_EVENT_COMPARE0:
-        ledsSetLEDState(gColor, LogicalStateOff);
-        nrfx_timer_clear(&ledsTimerDuty);
+        nrfx_timer_disable(&gTimerGenerator);
+        nrfx_timer_disable(&gTimerPeriodSmoothBlink);
+        ledsSetLEDState(gLEDColor, LogicalStateOff);
         break;
     default:
         break;
     }
+}
+
+void ledsSetupLEDsTimers(void)
+{
+    nrfx_timer_init(&gTimerGenerator, &gTimerGeneratorConfig, ledsHandlerGenerator);
+    nrfx_timer_extended_compare(&gTimerGenerator, NRF_TIMER_CC_CHANNEL0,
+                                nrfx_timer_ms_to_ticks(&gTimerGenerator, GENERATOR_PERIOD_MS),
+                                NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
+
+    nrfx_timer_init(&gTimerPeriodSmoothBlink, &gTimerPeriodSmoothBlinkConfig, ledsHandlerPeriodSmoothBlink);
+    nrfx_timer_extended_compare(&gTimerPeriodSmoothBlink, NRF_TIMER_CC_CHANNEL0,
+                                nrfx_timer_ms_to_ticks(&gTimerPeriodSmoothBlink, LED_BLINK_PERIOD_MS),
+                                NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
+}
+
+void ledsSmoothBlink(char color)
+{
+    gLEDColor = color;
+    gDutyCycleTick = 0;
+    gDutyCycleUpdate = true;
+    nrfx_timer_enable(&gTimerGenerator);
+    nrfx_timer_enable(&gTimerPeriodSmoothBlink);
+}
+
+bool ledsIsSmoothBlinking(void)
+{
+    return gDutyCycleUpdate;
+}
+
+void ledsSmoothBlinkPause(void)
+{
+    gDutyCycleUpdate = false;
+    nrfx_timer_pause(&gTimerPeriodSmoothBlink);
+}
+
+void ledsSmoothBlinkResume(void)
+{
+    gDutyCycleUpdate = true;
+    nrfx_timer_resume(&gTimerPeriodSmoothBlink);
 }

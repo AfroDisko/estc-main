@@ -2,18 +2,10 @@
 
 #define QUEUE_SIZE 100
 
-volatile unsigned int gIdxF = 0;
-volatile unsigned int gIdxR = 0;
-
 volatile Event gQueue[QUEUE_SIZE];
 
-void queueShiftEvents(void)
-{
-    for(unsigned int idx = 0; idx < gIdxR - gIdxF; ++idx)
-        gQueue[idx] = gQueue[gIdxF + idx];
-    gIdxR -= gIdxF;
-    gIdxF = 0;
-}
+volatile unsigned int gIdxF = 0;
+volatile unsigned int gIdxR = 0;
 
 bool queueIsFull(void)
 {
@@ -25,6 +17,14 @@ bool queueIsEmpty(void)
     return gIdxF == gIdxR;
 }
 
+void queueShiftEvents(void)
+{
+    for(unsigned int idx = 0; idx < gIdxR - gIdxF; ++idx)
+        gQueue[idx] = gQueue[gIdxF + idx];
+    gIdxR -= gIdxF;
+    gIdxF = 0;
+}
+
 void queueEventEnqueue(Event event)
 {
     if(queueIsFull())
@@ -32,14 +32,14 @@ void queueEventEnqueue(Event event)
 
     if(queueIsFull())
         return;
-    
+
     gQueue[gIdxR++] = event;
 }
 
 Event queueEventDequeue(void)
 {
     if(queueIsEmpty())
-        return DummyEvent;
+        return Dummy;
 
     return gQueue[gIdxF++];
 }
