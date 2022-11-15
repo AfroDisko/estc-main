@@ -2,6 +2,7 @@
 #define LEDS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "nrfx_timer.h"
 
@@ -21,16 +22,16 @@ void ledsUpdateDutyCycle(void);
 
 void ledsHandlerGenerator(nrf_timer_event_t event_type, void* p_context);
 
-void ledsHandlerPeriodSmoothBlink(nrf_timer_event_t event_type, void* p_context);
+void ledsHandlerBlinkPeriod(nrf_timer_event_t event_type, void* p_context);
 
 void ledsSetupLEDsTimers(void);
 
-void ledsSmoothBlink(char color);
+void ledsBlink(char color);
 
-bool ledsIsSmoothBlinking(void);
+bool ledsIsBlinking(void);
 
-void ledsSmoothBlinkPause(void);
+void ledsBlinkPause(void);
 
-void ledsSmoothBlinkResume(void);
+void ledsBlinkResume(void);
 
 #endif

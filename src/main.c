@@ -12,7 +12,7 @@
 #include "leds.h"
 #include "queue.h"
 
-#define PERIOD_BLINK_MS 1500
+#define BLINK_PERIOD_MS 1500
 
 char gPatern[] = "YYYYYYYRGGGGGGGGGBBBBBBB";
 volatile unsigned int gCurrIdx = 0;
@@ -22,7 +22,7 @@ nrfx_timer_config_t gTimerConfig = NRFX_TIMER_DEFAULT_CONFIG;
 
 void handlerBlink(nrf_timer_event_t event_type, void* p_context)
 {
-    ledsSmoothBlink(gPatern[gCurrIdx++]);
+    ledsBlink(gPatern[gCurrIdx++]);
     if(gCurrIdx == strlen(gPatern))
         gCurrIdx = 0;
 }
@@ -37,7 +37,9 @@ int main(void)
     app_timer_init();
 
     nrfx_timer_init(&gTimer, &gTimerConfig, handlerBlink);
-    nrfx_timer_extended_compare(&gTimer, NRF_TIMER_CC_CHANNEL0, nrfx_timer_ms_to_ticks(&gTimer, PERIOD_BLINK_MS), NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
+    nrfx_timer_extended_compare(&gTimer, NRF_TIMER_CC_CHANNEL0,
+                                nrfx_timer_ms_to_ticks(&gTimer, BLINK_PERIOD_MS),
+                                NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
 
     switchSetupSwitch();
     ledsSetupLEDsGPIO();
@@ -52,14 +54,14 @@ int main(void)
         case SW1PressedSingle:
             break;
         case SW1PressedDouble:
-            if(ledsIsSmoothBlinking())
+            if(ledsIsBlinking())
             {
-                ledsSmoothBlinkPause();
+                ledsBlinkPause();
                 nrfx_timer_pause(&gTimer);
             }
             else
             {
-                ledsSmoothBlinkResume();
+                ledsBlinkResume();
                 nrfx_timer_resume(&gTimer);
             }
             break;

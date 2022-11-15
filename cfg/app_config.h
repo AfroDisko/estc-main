@@ -82,12 +82,4 @@
 
 // </e>
 
-#ifndef SYSTICK_ENABLED
-#define SYSTICK_ENABLED 1
-#endif
-
-#ifndef NRFX_SYSTICK_ENABLED
-#define NRFX_SYSTICK_ENABLED 1
-#endif
-
 #endif
