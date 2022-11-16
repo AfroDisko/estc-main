@@ -67,7 +67,7 @@ SRC_FILES += \
 # Include folders common to all targets
 INC_FOLDERS += \
   $(PROJ_DIR)/cfg \
-  $(PROJ_DIR)/src \
+  $(PROJ_DIR)/inc \
   $(SDK_ROOT)/components/libraries/fifo \
   $(SDK_ROOT)/components/libraries/pwm \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
