@@ -3,6 +3,7 @@
 #include "app_timer.h"
 
 #include "switch.h"
+#include "common.h"
 #include "queue.h"
 
 #define SW1_PRT 1

@@ -6,8 +6,8 @@
 #include "nrfx_systick.h"
 
 #include "leds.h"
-#include "queue.h"
 #include "common.h"
+#include "queue.h"
 
 #define LED1_G_PRT 0
 #define LED1_G_PIN 6
