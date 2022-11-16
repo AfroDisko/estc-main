@@ -1,3 +1,5 @@
+#include "nrf_gpio.h"
+#include "nrfx_gpiote.h"
 #include "app_timer.h"
 
 #include "switch.h"

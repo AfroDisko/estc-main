@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "queue.h"
 
 #define QUEUE_SIZE 100

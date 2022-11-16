@@ -1,8 +1,6 @@
 #ifndef SWITCH_H
 #define SWITCH_H
 
-#include "nrfx_gpiote.h"
-
 #include "common.h"
 
 void switchSetupGPIO(void);

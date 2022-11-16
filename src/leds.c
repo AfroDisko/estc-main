@@ -2,10 +2,12 @@
 
 #include "nrf_gpio.h"
 #include "app_timer.h"
+#include "nrfx_timer.h"
 #include "nrfx_systick.h"
 
 #include "leds.h"
 #include "queue.h"
+#include "common.h"
 
 #define LED1_G_PRT 0
 #define LED1_G_PIN 6
@@ -96,9 +98,9 @@ LogicalState ledsGetLEDState(char color)
     return nrf_gpio_pin_out_read(ledsColorToPin(color)) == 0 ? LogicalStateOn : LogicalStateOff;
 }
 
-// cos() is used for automatic periodic behavior of the duty cycle
 void ledsUpdateDutyCycle(void)
 {
+    // cos() provides automatic periodic behavior of the duty cycle
     gDutyCycle = 0.5 - 0.5 * cos(2 * 3.1415 * gDutyCycleTick++ * GENERATOR_PERIOD_MS / BLINK_PERIOD_MS);
 }
 

@@ -1,12 +1,7 @@
 #ifndef LEDS_H
 #define LEDS_H
 
-#include <stdint.h>
 #include <stdbool.h>
-
-#include "nrfx_timer.h"
-
-#include "common.h"
 
 // uint32_t ledsColorToPin(char color);
 

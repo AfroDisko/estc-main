@@ -5,6 +5,8 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_log_backend_usb.h"
 
+#include "nrfx_gpiote.h"
+
 #include "app_timer.h"
 #include "nrfx_systick.h"
 
