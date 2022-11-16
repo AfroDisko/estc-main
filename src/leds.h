@@ -8,23 +8,25 @@
 
 #include "common.h"
 
-uint32_t ledsColorToPin(char color);
+// uint32_t ledsColorToPin(char color);
 
-void ledsResetLEDsPins(void);
+// void ledsResetPins(void);
 
-void ledsSetupLEDsGPIO(void);
+void ledsSetupGPIO(void);
 
-void ledsSetLEDState(char color, LogicalState state);
+// void ledsSetLEDState(char color, LogicalState state);
 
-LogicalState ledsGetLEDState(char color);
+// LogicalState ledsGetLEDState(char color);
 
-void ledsUpdateDutyCycle(void);
+// void ledsUpdateDutyCycle(void);
 
-void ledsHandlerGenerator(nrf_timer_event_t event_type, void* p_context);
+// void ledsHandlerPeriod(nrf_timer_event_t event_type, void* p_context);
 
-void ledsHandlerBlinkPeriod(nrf_timer_event_t event_type, void* p_context);
+// void ledsHandlerGenerator(void* p_context);
 
-void ledsSetupLEDsTimers(void);
+// void ledsHandlerChecker(nrf_timer_event_t event_type, void* p_context);
+
+void ledsSetupTimers(void);
 
 void ledsBlink(char color);
 

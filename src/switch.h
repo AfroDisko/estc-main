@@ -5,20 +5,18 @@
 
 #include "common.h"
 
-LogicalState switchGetSwitchState(void);
+void switchSetupGPIO(void);
 
-void switchSetupSwitchEvent(nrfx_gpiote_in_config_t* config, nrfx_gpiote_evt_handler_t handler);
+// LogicalState switchGetSwitchState(void);
 
-void switchEnableEvent(bool int_enable);
+// void switchHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 
-void switchSetupSwitch(void);
+void switchSetupGPIOTE(void);
 
-void switchExpectPressDouble(void);
+// void switchHandlerListener(void* p_context);
 
-void switchHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
+// void switchHandlerDebounce(void* p_context);
 
-void switchHandlerDebounce();
-
-void switchHandlerPressDouble();
+void switchSetupTimers(void);
 
 #endif

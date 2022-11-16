@@ -5,17 +5,18 @@
 
 typedef enum
 {
-    Dummy,
-    SW1PressedSingle,
-    SW1PressedDouble,
-    SW1Released
+    EventDummy,
+    EventSwitchPressedSingle,
+    EventSwitchPressedDouble,
+    EventSwitchPressedTriple,
+    EventLEDBlinkCompleted
 } Event;
 
-bool queueIsFull(void);
+// bool queueIsFull(void);
 
-bool queueIsEmpty(void);
+// bool queueIsEmpty(void);
 
-void queueShiftEvents(void);
+// void queueShiftEvents(void);
 
 void queueEventEnqueue(Event event);
 

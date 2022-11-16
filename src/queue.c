@@ -17,18 +17,18 @@ bool queueIsEmpty(void)
     return gIdxF == gIdxR;
 }
 
-void queueShiftEvents(void)
+void queueShift(void)
 {
     for(unsigned int idx = 0; idx < gIdxR - gIdxF; ++idx)
         gQueue[idx] = gQueue[gIdxF + idx];
     gIdxR -= gIdxF;
-    gIdxF = 0;
+    gIdxF -= gIdxF;
 }
 
 void queueEventEnqueue(Event event)
 {
     if(queueIsFull())
-        queueShiftEvents();
+        queueShift();
 
     if(queueIsFull())
         return;
@@ -39,7 +39,10 @@ void queueEventEnqueue(Event event)
 Event queueEventDequeue(void)
 {
     if(queueIsEmpty())
-        return Dummy;
+    {
+        queueShift();
+        return EventDummy;
+    }
 
     return gQueue[gIdxF++];
 }
