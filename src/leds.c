@@ -101,7 +101,7 @@ LogicalState ledsGetLEDState(char color)
 void ledsUpdateDutyCycle(void)
 {
     // cos() provides automatic periodic behavior of the duty cycle
-    gDutyCycle = 0.5 - 0.5 * cos(2 * 3.1415 * gDutyCycleTick++ * GENERATOR_PERIOD_MS / BLINK_PERIOD_MS);
+    gDutyCycle = 0.5 - 0.5 * cos(2 * M_PI * gDutyCycleTick++ * GENERATOR_PERIOD_MS / BLINK_PERIOD_MS);
 }
 
 void ledsHandlerPeriod(nrf_timer_event_t event_type, void* p_context)
