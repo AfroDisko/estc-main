@@ -1,18 +1,12 @@
 #ifndef LEDS_H
 #define LEDS_H
 
-#include <stdbool.h>
+#include <stdint.h>
 
 void ledsSetupGPIO(void);
 
-void ledsSetupTimers(void);
+void ledsSetupPWM(void);
 
-void ledsBlink(char color);
-
-bool ledsIsBlinking(void);
-
-void ledsBlinkPause(void);
-
-void ledsBlinkResume(void);
+void ledsSetLED2Sat(uint8_t s);
 
 #endif

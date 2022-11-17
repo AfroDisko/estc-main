@@ -5,9 +5,7 @@ typedef enum
 {
     EventDummy,
     EventSwitchPressedSingle,
-    EventSwitchPressedDouble,
-    EventSwitchPressedTriple,
-    EventLEDBlinkCompleted
+    EventSwitchPressedDouble
 } Event;
 
 void queueEventEnqueue(Event event);
