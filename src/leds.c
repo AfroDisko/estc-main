@@ -146,18 +146,18 @@ void ledsSetLED2State(ColorHSV hsv)
 
 void ledsShiftLED1State(void)
 {
-    gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * 3.1415 * gLED1ShiftTick++ * TIMER_LED1_FLASH_PERIOD_MS / gLED1FlashPeriod));
+    gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * M_PI * gLED1ShiftTick++ * TIMER_LED1_FLASH_PERIOD_MS / gLED1FlashPeriod));
     ledsUpdatePWMSeqValuesLED1();
 }
 
-void handlerLED1Flash(void* p_context)
+void ledsHandlerLED1Flash(void* p_context)
 {
     ledsShiftLED1State();
 }
 
 void ledsSetupLED1Timer(void)
 {
-    app_timer_create(&gTimerLED1Flash, APP_TIMER_MODE_REPEATED, handlerLED1Flash);
+    app_timer_create(&gTimerLED1Flash, APP_TIMER_MODE_REPEATED, ledsHandlerLED1Flash);
 }
 
 void ledsFlashLED1L(void)
