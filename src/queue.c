@@ -5,10 +5,10 @@
 
 #define QUEUE_SIZE UINT8_MAX
 
-volatile Event gQueue[QUEUE_SIZE];
+static volatile Event gQueue[QUEUE_SIZE];
 
-volatile uint8_t gIdxF = 0;
-volatile uint8_t gIdxR = 0;
+static volatile uint8_t gIdxF = 0;
+static volatile uint8_t gIdxR = 0;
 
 bool queueIsFull(void)
 {

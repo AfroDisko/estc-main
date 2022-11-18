@@ -12,14 +12,14 @@ ColorRGB hsv2rgb(ColorHSV hsv)
         return rgb;
     }
 
-    uint8_t region = hsv.h / 43;
-    uint8_t remainder = (hsv.h - (region * 43)) * 6; 
+    uint8_t reg = hsv.h / 43;
+    uint8_t res = (hsv.h - (reg * 43)) * 6; 
 
     uint8_t p = (hsv.v * (UINT8_MAX - hsv.s)) >> 8;
-    uint8_t q = (hsv.v * (UINT8_MAX - ((hsv.s * remainder) >> 8))) >> 8;
-    uint8_t t = (hsv.v * (UINT8_MAX - ((hsv.s * (UINT8_MAX - remainder)) >> 8))) >> 8;
+    uint8_t q = (hsv.v * (UINT8_MAX - ((hsv.s * res) >> 8))) >> 8;
+    uint8_t t = (hsv.v * (UINT8_MAX - ((hsv.s * (UINT8_MAX - res)) >> 8))) >> 8;
 
-    switch(region)
+    switch(reg)
     {
     case 0:
         rgb.r = hsv.v;

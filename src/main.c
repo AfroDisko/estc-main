@@ -11,6 +11,34 @@
 #include "leds.h"
 #include "queue.h"
 
+static const char gMode[]  = "NHSV";
+static uint8_t    gModeIdx = 0;
+
+void switchMode(void)
+{
+    if(++gModeIdx == strlen(gMode))
+        gModeIdx = 0;
+    switch(gMode[gModeIdx])
+    {
+    case 'N':
+        ledsFlashLED1Halt();
+        ledsSetLED1State(0);
+        break;
+    case 'H':
+        ledsFlashLED1L();
+        break;
+    case 'S':
+        ledsFlashLED1S();
+        break;
+    case 'V':
+        ledsFlashLED1Halt();
+        ledsSetLED1State(255);
+        break;
+    default:
+        break;
+    }
+}
+
 int main(void)
 {   
     NRF_LOG_INIT(NULL);
@@ -24,16 +52,20 @@ int main(void)
     switchSetupTimers();
 
     ledsSetupPWM();
+    ledsSetupLED1Timer();
+
+    ledsSetLED2State((ColorHSV){.h = 247, .s = 255, .v = 255});
 
     while(true)
     {
         switch(queueEventDequeue())
         {
+        case EventSwitchPressedContin:
+            break;
         case EventSwitchPressedSingle:
-            ledsSetLED2Sat(0);
             break;
         case EventSwitchPressedDouble:
-            ledsSetLED2Sat(255);
+            switchMode();
             break;
         default:
             break;

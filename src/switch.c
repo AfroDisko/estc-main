@@ -12,11 +12,11 @@
 #define LISTENER_DURATION_MS 500
 #define DEBOUNCE_DURATION_MS 50
 
-volatile unsigned int gConfirmedPresses = 0;
-
 APP_TIMER_DEF(gTimerListener);
 
 APP_TIMER_DEF(gTimerDebounce);
+
+static volatile uint8_t gConfirmedPresses = 0;
 
 void switchSetupGPIO(void)
 {
@@ -54,7 +54,7 @@ void switchHandlerListener(void* p_context)
     switch(gConfirmedPresses)
     {
     case 1:
-        queueEventEnqueue(EventSwitchPressedSingle);
+        queueEventEnqueue(switchGetSwitchState() == LogicalStateOn ? EventSwitchPressedContin : EventSwitchPressedSingle);
         break;
     case 2:
         queueEventEnqueue(EventSwitchPressedDouble);

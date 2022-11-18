@@ -1,8 +1,9 @@
+#include <math.h>
+
+#include "app_timer.h"
 #include "nrf_gpio.h"
 #include "nrfx_pwm.h"
 
-#include "common.h"
-#include "ledsutils.h"
 #include "leds.h"
 
 #define LED1_G_PRT 0
@@ -17,6 +18,16 @@
 #define LED2_B_PRT 0
 #define LED2_B_PIN 12
 
+#define LED1_FLASH_PERIOD_L_MS 2000
+#define LED1_FLASH_PERIOD_S_MS 1000
+
+#define TIMER_LED1_FLASH_PERIOD_MS 1
+
+APP_TIMER_DEF(gTimerLED1Flash);
+
+static volatile uint64_t gLED1ShiftTick;
+static volatile uint16_t gLED1FlashPeriod;
+
 static volatile uint8_t  gLED1State = 0;
 static volatile ColorRGB gLED2State =
 {
@@ -25,14 +36,14 @@ static volatile ColorRGB gLED2State =
     .b = 0.
 };
 
-static nrf_pwm_values_individual_t gPWMSeqValues = 
+static volatile nrf_pwm_values_individual_t gPWMSeqValues = 
 {
     .channel_0 = 0,
     .channel_1 = 0,
     .channel_2 = 0,
     .channel_3 = 0
 };
-static nrf_pwm_sequence_t          gPWMSeq       =
+static const nrf_pwm_sequence_t gPWMSeq =
 {
     .values.p_individual = &gPWMSeqValues,
     .length              = NRF_PWM_VALUES_LENGTH(gPWMSeqValues),
@@ -40,9 +51,9 @@ static nrf_pwm_sequence_t          gPWMSeq       =
     .end_delay           = 0
 };
 
-static const uint16_t    gPWMTopValue = UINT16_MAX;
-static nrfx_pwm_t        gPWMInstance = NRFX_PWM_INSTANCE(0);
-static nrfx_pwm_config_t gPWMConfig   =
+static const uint16_t          gPWMTopValue = 1024;
+static const nrfx_pwm_t        gPWMInstance = NRFX_PWM_INSTANCE(0);
+static const nrfx_pwm_config_t gPWMConfig   =
 {
     .output_pins =
     {
@@ -52,8 +63,8 @@ static nrfx_pwm_config_t gPWMConfig   =
         NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN) | NRFX_PWM_PIN_INVERTED
     },
     .irq_priority = APP_IRQ_PRIORITY_LOWEST,
-    .base_clock   = NRF_PWM_CLK_2MHz,
-    .count_mode   = NRF_PWM_MODE_UP,
+    .base_clock   = NRF_PWM_CLK_1MHz,
+    .count_mode   = NRF_PWM_MODE_UP_AND_DOWN,
     .top_value    = gPWMTopValue,
     .load_mode    = NRF_PWM_LOAD_INDIVIDUAL,
     .step_mode    = NRF_PWM_STEP_AUTO
@@ -121,8 +132,49 @@ void ledsUpdatePWMSeqValuesLED2(void)
     gPWMSeqValues.channel_3 = gPWMTopValue * gLED2State.b / UINT8_MAX;
 }
 
-void ledsSetLED2Sat(uint8_t s)
+void ledsSetLED1State(uint8_t state)
 {
-    gLED2State = hsv2rgb((ColorHSV){.h = 0, .s = s, .v = 255});
+    gLED1State = state;
+    ledsUpdatePWMSeqValuesLED1();
+}
+
+void ledsSetLED2State(ColorHSV hsv)
+{
+    gLED2State = hsv2rgb(hsv);
     ledsUpdatePWMSeqValuesLED2();
+}
+
+void ledsShiftLED1State(void)
+{
+    gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * 3.1415 * gLED1ShiftTick++ * TIMER_LED1_FLASH_PERIOD_MS / gLED1FlashPeriod));
+    ledsUpdatePWMSeqValuesLED1();
+}
+
+void handlerLED1Flash(void* p_context)
+{
+    ledsShiftLED1State();
+}
+
+void ledsSetupLED1Timer(void)
+{
+    app_timer_create(&gTimerLED1Flash, APP_TIMER_MODE_REPEATED, handlerLED1Flash);
+}
+
+void ledsFlashLED1L(void)
+{
+    gLED1ShiftTick = 0;
+    gLED1FlashPeriod = LED1_FLASH_PERIOD_L_MS;
+    app_timer_start(gTimerLED1Flash, APP_TIMER_TICKS(TIMER_LED1_FLASH_PERIOD_MS), NULL);
+}
+
+void ledsFlashLED1S(void)
+{
+    gLED1ShiftTick = 0;
+    gLED1FlashPeriod = LED1_FLASH_PERIOD_S_MS;
+    app_timer_start(gTimerLED1Flash, APP_TIMER_TICKS(TIMER_LED1_FLASH_PERIOD_MS), NULL);
+}
+
+void ledsFlashLED1Halt(void)
+{
+    app_timer_stop(gTimerLED1Flash);
 }
