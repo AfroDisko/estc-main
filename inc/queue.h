@@ -6,7 +6,8 @@ typedef enum
     EventDummy,
     EventSwitchPressedContin,
     EventSwitchPressedSingle,
-    EventSwitchPressedDouble
+    EventSwitchPressedDouble,
+    EventSwitchReleased
 } Event;
 
 void queueEventEnqueue(Event event);

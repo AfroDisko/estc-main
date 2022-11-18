@@ -17,6 +17,7 @@ APP_TIMER_DEF(gTimerListener);
 APP_TIMER_DEF(gTimerDebounce);
 
 static volatile uint8_t gConfirmedPresses = 0;
+static volatile bool    gConfirmedPContin = false;
 
 void switchSetupGPIO(void)
 {
@@ -54,7 +55,13 @@ void switchHandlerListener(void* p_context)
     switch(gConfirmedPresses)
     {
     case 1:
-        queueEventEnqueue(switchGetSwitchState() == LogicalStateOn ? EventSwitchPressedContin : EventSwitchPressedSingle);
+        if(switchGetSwitchState() == LogicalStateOn)
+        {
+            gConfirmedPContin = true;
+            queueEventEnqueue(EventSwitchPressedContin);
+        }
+        else
+            queueEventEnqueue(EventSwitchPressedSingle);
         break;
     case 2:
         queueEventEnqueue(EventSwitchPressedDouble);
@@ -69,6 +76,11 @@ void switchHandlerDebounce(void* p_context)
 {
     if(switchGetSwitchState() == LogicalStateOn)
         ++gConfirmedPresses;
+    else if(gConfirmedPContin)
+    {
+        gConfirmedPContin = false;
+        queueEventEnqueue(EventSwitchReleased);
+    }
 }
 
 void switchSetupTimers(void)

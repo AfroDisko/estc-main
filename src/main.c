@@ -11,6 +11,13 @@
 #include "leds.h"
 #include "queue.h"
 
+static ColorHSV gDefaultColor =
+{
+    .h = 247,
+    .s = 255,
+    .v = 255
+};
+
 static const char gMode[]  = "NHSV";
 static uint8_t    gModeIdx = 0;
 
@@ -54,19 +61,22 @@ int main(void)
     ledsSetupPWM();
     ledsSetupLED1Timer();
 
-    ledsSetLED2State((ColorHSV){.h = 247, .s = 255, .v = 255});
+    ledsSetLED2State(gDefaultColor);
 
     while(true)
     {
         switch(queueEventDequeue())
         {
         case EventSwitchPressedContin:
+            ledsSetLED1State(255);
             break;
         case EventSwitchPressedSingle:
             break;
         case EventSwitchPressedDouble:
             switchMode();
             break;
+        case EventSwitchReleased:
+            ledsSetLED1State(0);
         default:
             break;
         }
