@@ -51,7 +51,7 @@ static const nrf_pwm_sequence_t gPWMSeq =
     .end_delay           = 0
 };
 
-static const uint16_t          gPWMTopValue = 1024;
+static const uint16_t          gPWMTopValue = 1020;
 static const nrfx_pwm_t        gPWMInstance = NRFX_PWM_INSTANCE(0);
 static const nrfx_pwm_config_t gPWMConfig   =
 {

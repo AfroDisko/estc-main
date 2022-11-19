@@ -37,6 +37,9 @@ void modifyColorParam(void* p_context)
     if(*gColorParam == 0)
         increase = true;
 
+    if(gMode[gModeIdx] == 'H')
+        increase = true;
+
     if(increase)
         ++*gColorParam;
     else
