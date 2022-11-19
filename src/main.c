@@ -31,11 +31,11 @@ void modifyColorParam(void* p_context)
 {
     static bool increase = true;
 
-    if(*gColorParam == 255)
-        increase = false;
-
     if(*gColorParam == 0)
         increase = true;
+
+    if(*gColorParam == 255)
+        increase = false;
 
     if(gMode[gModeIdx] == 'H')
         increase = true;

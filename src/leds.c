@@ -21,9 +21,9 @@
 #define LED1_FLASH_PERIOD_L_MS 2000
 #define LED1_FLASH_PERIOD_S_MS 1000
 
-#define TIMER_LED1_FLASH_PERIOD_MS 1
+#define LED1_SHIFT_PERIOD_MS 1
 
-APP_TIMER_DEF(gTimerLED1Flash);
+APP_TIMER_DEF(gTimerLED1Shift);
 
 static volatile uint64_t gLED1ShiftTick;
 static volatile uint16_t gLED1FlashPeriod;
@@ -36,7 +36,7 @@ static volatile ColorRGB gLED2State =
     .b = 0.
 };
 
-static volatile nrf_pwm_values_individual_t gPWMSeqValues = 
+static nrf_pwm_values_individual_t gPWMSeqValues = 
 {
     .channel_0 = 0,
     .channel_1 = 0,
@@ -146,35 +146,35 @@ void ledsSetLED2State(ColorHSV hsv)
 
 void ledsShiftLED1State(void)
 {
-    gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * M_PI * gLED1ShiftTick++ * TIMER_LED1_FLASH_PERIOD_MS / gLED1FlashPeriod));
+    gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * M_PI * gLED1ShiftTick++ * LED1_SHIFT_PERIOD_MS / gLED1FlashPeriod));
     ledsUpdatePWMSeqValuesLED1();
 }
 
-void ledsHandlerLED1Flash(void* p_context)
+void ledsHandlerLED1Shift(void* p_context)
 {
     ledsShiftLED1State();
 }
 
 void ledsSetupLED1Timer(void)
 {
-    app_timer_create(&gTimerLED1Flash, APP_TIMER_MODE_REPEATED, ledsHandlerLED1Flash);
+    app_timer_create(&gTimerLED1Shift, APP_TIMER_MODE_REPEATED, ledsHandlerLED1Shift);
 }
 
 void ledsFlashLED1L(void)
 {
     gLED1ShiftTick = 0;
     gLED1FlashPeriod = LED1_FLASH_PERIOD_L_MS;
-    app_timer_start(gTimerLED1Flash, APP_TIMER_TICKS(TIMER_LED1_FLASH_PERIOD_MS), NULL);
+    app_timer_start(gTimerLED1Shift, APP_TIMER_TICKS(LED1_SHIFT_PERIOD_MS), NULL);
 }
 
 void ledsFlashLED1S(void)
 {
     gLED1ShiftTick = 0;
     gLED1FlashPeriod = LED1_FLASH_PERIOD_S_MS;
-    app_timer_start(gTimerLED1Flash, APP_TIMER_TICKS(TIMER_LED1_FLASH_PERIOD_MS), NULL);
+    app_timer_start(gTimerLED1Shift, APP_TIMER_TICKS(LED1_SHIFT_PERIOD_MS), NULL);
 }
 
 void ledsFlashLED1Halt(void)
 {
-    app_timer_stop(gTimerLED1Flash);
+    app_timer_stop(gTimerLED1Shift);
 }
