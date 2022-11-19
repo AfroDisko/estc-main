@@ -4,24 +4,21 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "nrf_log_backend_usb.h"
+
 #include "nrfx_gpiote.h"
+
 #include "app_timer.h"
 
 #include "switch.h"
 #include "leds.h"
 #include "queue.h"
+#include "nvmc.h"
 
-#define TIMER_COLOR_MOD_PERIOD_MS 25
+#define COLOR_MOD_PERIOD_MS 25
 
 APP_TIMER_DEF(gTimerColorMod);
 
-static ColorHSV gColor =
-{
-    .h = 247,
-    .s = 255,
-    .v = 255
-};
-
+static ColorHSV gColor;
 static uint8_t* gColorParam = NULL;
 
 static const char gMode[]  = "NHSV";
@@ -56,6 +53,7 @@ void switchMode(void)
     {
     case 'N':
         gColorParam = NULL;
+        nvmcSaveColor(gColor);
         ledsFlashLED1Halt();
         ledsSetLED1State(0);
         break;
@@ -94,6 +92,7 @@ int main(void)
     ledsSetupPWM();
     ledsSetupLED1Timer();
 
+    gColor = nvmcLoadColor();
     ledsSetLED2State(gColor);
 
     while(true)
@@ -103,13 +102,16 @@ int main(void)
         switch(queueEventDequeue())
         {
         case EventSwitchPressedContin:
-            app_timer_start(gTimerColorMod, APP_TIMER_TICKS(TIMER_COLOR_MOD_PERIOD_MS), NULL);
-            break;
-        case EventSwitchReleased:
-            app_timer_stop(gTimerColorMod);
+            app_timer_start(gTimerColorMod, APP_TIMER_TICKS(COLOR_MOD_PERIOD_MS), NULL);
             break;
         case EventSwitchPressedDouble:
             switchMode();
+            break;
+        case EventSwitchPressedTriple:
+            nvmcPageErase();
+            break;
+        case EventSwitchReleased:
+            app_timer_stop(gTimerColorMod);
             break;
         default:
             break;

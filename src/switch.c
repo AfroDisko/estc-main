@@ -66,6 +66,9 @@ void switchHandlerListener(void* p_context)
     case 2:
         queueEventEnqueue(EventSwitchPressedDouble);
         break;
+    case 3:
+        queueEventEnqueue(EventSwitchPressedTriple);
+        break;
     default:
         break;
     }

@@ -7,6 +7,7 @@ typedef enum
     EventSwitchPressedContin,
     EventSwitchPressedSingle,
     EventSwitchPressedDouble,
+    EventSwitchPressedTriple,
     EventSwitchReleased
 } Event;
 
