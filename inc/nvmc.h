@@ -3,9 +3,11 @@
 
 #include "ledsutils.h"
 
-void nvmcPageErase(void);
+void nvmcSetup(void);
 
 void nvmcSaveColor(ColorHSV color);
+
+bool nvmcHasColor(void);
 
 ColorHSV nvmcLoadColor(void);
 

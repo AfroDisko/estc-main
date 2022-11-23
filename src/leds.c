@@ -146,6 +146,7 @@ void ledsSetLED2State(ColorHSV hsv)
 
 void ledsShiftLED1State(void)
 {
+    // cos() is used for automatic periodic behavior
     gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * M_PI * gLED1ShiftTick++ * LED1_SHIFT_PERIOD_MS / gLED1FlashPeriod));
     ledsUpdatePWMSeqValuesLED1();
 }

@@ -14,11 +14,16 @@
 #include "queue.h"
 #include "nvmc.h"
 
-#define COLOR_MOD_PERIOD_MS 25
+#define COLOR_MOD_PERIOD_MS 10
 
 APP_TIMER_DEF(gTimerColorMod);
 
-static ColorHSV gColor;
+static ColorHSV gColor =
+{
+    .h = 247,
+    .s = 255,
+    .v = 255
+};
 static uint8_t* gColorParam = NULL;
 
 static const char gMode[]  = "NHSV";
@@ -88,15 +93,19 @@ int main(void)
     switchSetupGPIO();
     switchSetupGPIOTE();
     switchSetupTimers();
-
     ledsSetupPWM();
     ledsSetupLED1Timer();
+    nvmcSetup();
 
-    gColor = nvmcLoadColor();
+    if(nvmcHasColor())
+        gColor = nvmcLoadColor();
     ledsSetLED2State(gColor);
 
     while(true)
     {
+        NRF_LOG_PROCESS();
+        LOG_BACKEND_USB_PROCESS();
+
         __WFI();
 
         switch(queueEventDequeue())
@@ -107,17 +116,11 @@ int main(void)
         case EventSwitchPressedDouble:
             switchMode();
             break;
-        case EventSwitchPressedTriple:
-            nvmcPageErase();
-            break;
         case EventSwitchReleased:
             app_timer_stop(gTimerColorMod);
             break;
         default:
             break;
         }
-
-        NRF_LOG_PROCESS();
-        LOG_BACKEND_USB_PROCESS();
     }
 }
