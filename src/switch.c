@@ -9,7 +9,7 @@
 #define SW1_PRT 1
 #define SW1_PIN 6
 
-#define LISTENER_DURATION_MS 500
+#define LISTENER_DURATION_MS 300
 #define DEBOUNCE_DURATION_MS 50
 
 APP_TIMER_DEF(gTimerListener);
@@ -18,6 +18,15 @@ APP_TIMER_DEF(gTimerDebounce);
 
 static volatile uint8_t gConfirmedPresses = 0;
 static volatile bool    gConfirmedPContin = false;
+
+static const nrfx_gpiote_in_config_t gSwitchGPIOTEConfig =
+{
+    .sense           = NRF_GPIOTE_POLARITY_TOGGLE,
+    .pull            = NRF_GPIO_PIN_PULLUP,
+    .is_watcher      = false,
+    .hi_accuracy     = true,
+    .skip_gpio_setup = false
+};
 
 void switchSetupGPIO(void)
 {
@@ -37,6 +46,7 @@ void switchHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
         app_timer_start(gTimerListener, APP_TIMER_TICKS(LISTENER_DURATION_MS), NULL);
         app_timer_start(gTimerDebounce, APP_TIMER_TICKS(DEBOUNCE_DURATION_MS), NULL);
         break;
+
     default:
         break;
     }
@@ -44,9 +54,7 @@ void switchHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
 void switchSetupGPIOTE(void)
 {
-    nrfx_gpiote_in_config_t config = NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(true);
-    config.pull = NRF_GPIO_PIN_PULLUP;
-    nrfx_gpiote_in_init(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), &config, switchHandlerSW1);
+    nrfx_gpiote_in_init(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), &gSwitchGPIOTEConfig, switchHandlerSW1);
     nrfx_gpiote_in_event_enable(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), true);
 }
 
@@ -63,12 +71,11 @@ void switchHandlerListener(void* p_context)
         else
             queueEventEnqueue(EventSwitchPressedSingle);
         break;
+
     case 2:
         queueEventEnqueue(EventSwitchPressedDouble);
         break;
-    case 3:
-        queueEventEnqueue(EventSwitchPressedTriple);
-        break;
+
     default:
         break;
     }

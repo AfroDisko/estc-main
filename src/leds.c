@@ -18,22 +18,23 @@
 #define LED2_B_PRT 0
 #define LED2_B_PIN 12
 
-#define LED1_FLASH_PERIOD_L_MS 2000
-#define LED1_FLASH_PERIOD_S_MS 1000
+#define LED1_FLASH_PERIOD_DFLT_MS 1000
+#define LED1_FLASH_PERIOD_SLOW_MS 2000
+#define LED1_FLASH_PERIOD_FAST_MS 500
 
 #define LED1_SHIFT_PERIOD_MS 1
 
 APP_TIMER_DEF(gTimerLED1Shift);
 
-static volatile uint64_t gLED1ShiftTick;
-static volatile uint16_t gLED1FlashPeriod;
+static volatile uint16_t gLED1FlashPeriod = LED1_FLASH_PERIOD_DFLT_MS;
+static volatile uint64_t gLED1ShiftTick   = 0;
 
 static volatile uint8_t  gLED1State = 0;
 static volatile ColorRGB gLED2State =
 {
-    .r = 0.,
-    .g = 0.,
-    .b = 0.
+    .r = 0,
+    .g = 0,
+    .b = 0
 };
 
 static nrf_pwm_values_individual_t gPWMSeqValues = 
@@ -51,6 +52,7 @@ static const nrf_pwm_sequence_t gPWMSeq =
     .end_delay           = 0
 };
 
+// gPWMTopValue = 1020 so that PWM period = 1020/1e6 ~ 1ms, and 1020/UINT8_MAX is integer
 static const uint16_t          gPWMTopValue = 1020;
 static const nrfx_pwm_t        gPWMInstance = NRFX_PWM_INSTANCE(0);
 static const nrfx_pwm_config_t gPWMConfig   =
@@ -76,12 +78,16 @@ uint32_t ledsColor2Pin(char color)
     {
     case 'g':
         return NRF_GPIO_PIN_MAP(LED1_G_PRT, LED1_G_PIN);
+
     case 'R':
         return NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN);
+
     case 'G':
         return NRF_GPIO_PIN_MAP(LED2_G_PRT, LED2_G_PIN);
+
     case 'B':
         return NRF_GPIO_PIN_MAP(LED2_B_PRT, LED2_B_PIN);
+
     default:
         return 0;
     }
@@ -161,17 +167,22 @@ void ledsSetupLED1Timer(void)
     app_timer_create(&gTimerLED1Shift, APP_TIMER_MODE_REPEATED, ledsHandlerLED1Shift);
 }
 
-void ledsFlashLED1L(void)
+void ledsFlashLED1(FlashMode mode)
 {
     gLED1ShiftTick = 0;
-    gLED1FlashPeriod = LED1_FLASH_PERIOD_L_MS;
-    app_timer_start(gTimerLED1Shift, APP_TIMER_TICKS(LED1_SHIFT_PERIOD_MS), NULL);
-}
+    switch(mode)
+    {
+    case FlashModeSlow:
+        gLED1FlashPeriod = LED1_FLASH_PERIOD_SLOW_MS;
+        break;
 
-void ledsFlashLED1S(void)
-{
-    gLED1ShiftTick = 0;
-    gLED1FlashPeriod = LED1_FLASH_PERIOD_S_MS;
+    case FlashModeFast:
+        gLED1FlashPeriod = LED1_FLASH_PERIOD_FAST_MS;
+        break;
+
+    default:
+        break;
+    }
     app_timer_start(gTimerLED1Shift, APP_TIMER_TICKS(LED1_SHIFT_PERIOD_MS), NULL);
 }
 

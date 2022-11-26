@@ -4,10 +4,9 @@
 typedef enum
 {
     EventDummy,
-    EventSwitchPressedContin,
     EventSwitchPressedSingle,
     EventSwitchPressedDouble,
-    EventSwitchPressedTriple,
+    EventSwitchPressedContin,
     EventSwitchReleased
 } Event;
 

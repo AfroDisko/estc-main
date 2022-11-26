@@ -6,6 +6,12 @@
 #include "common.h"
 #include "ledsutils.h"
 
+typedef enum
+{
+    FlashModeSlow,
+    FlashModeFast
+} FlashMode;
+
 void ledsSetupGPIO(void);
 
 void ledsSetLEDState(char color, LogicalState state);
@@ -20,9 +26,7 @@ void ledsSetLED2State(ColorHSV hsv);
 
 void ledsSetupLED1Timer(void);
 
-void ledsFlashLED1L(void);
-
-void ledsFlashLED1S(void);
+void ledsFlashLED1(FlashMode mode);
 
 void ledsFlashLED1Halt(void);
 

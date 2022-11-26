@@ -32,8 +32,10 @@ void queueEventEnqueue(Event event)
 {
     if(queueIsFull())
         queueShift();
+
     if(queueIsFull())
         return;
+
     gQueue[gIdxR++] = event;
 }
 
@@ -44,5 +46,6 @@ Event queueEventDequeue(void)
         queueShift();
         return EventDummy;
     }
+
     return gQueue[gIdxF++];
 }
