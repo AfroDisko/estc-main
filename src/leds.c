@@ -26,11 +26,11 @@
 
 APP_TIMER_DEF(gTimerLED1Shift);
 
-static volatile uint16_t gLED1FlashPeriod = LED1_FLASH_PERIOD_DFLT_MS;
-static volatile uint64_t gLED1ShiftTick   = 0;
+static uint16_t gLED1FlashPeriod = LED1_FLASH_PERIOD_DFLT_MS;
+static uint64_t gLED1ShiftTick   = 0;
 
-static volatile uint8_t  gLED1State = 0;
-static volatile ColorRGB gLED2State =
+static uint8_t  gLED1State = 0;
+static ColorRGB gLED2State =
 {
     .r = 0,
     .g = 0,
@@ -72,7 +72,7 @@ static const nrfx_pwm_config_t gPWMConfig   =
     .step_mode    = NRF_PWM_STEP_AUTO
 };
 
-uint32_t ledsColor2Pin(char color)
+static uint32_t ledsColor2Pin(char color)
 {
     switch(color)
     {
@@ -93,7 +93,7 @@ uint32_t ledsColor2Pin(char color)
     }
 }
 
-void ledsResetPins(void)
+static void ledsResetPins(void)
 {
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED1_G_PRT, LED1_G_PIN), 1);
     nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(LED2_R_PRT, LED2_R_PIN), 1);
@@ -126,12 +126,12 @@ void ledsSetupPWM(void)
     nrfx_pwm_simple_playback(&gPWMInstance, &gPWMSeq, 1, NRFX_PWM_FLAG_LOOP);
 }
 
-void ledsUpdatePWMSeqValuesLED1(void)
+static void ledsUpdatePWMSeqValuesLED1(void)
 {
     gPWMSeqValues.channel_0 = gPWMTopValue * gLED1State / UINT8_MAX;
 }
 
-void ledsUpdatePWMSeqValuesLED2(void)
+static void ledsUpdatePWMSeqValuesLED2(void)
 {
     gPWMSeqValues.channel_1 = gPWMTopValue * gLED2State.r / UINT8_MAX;
     gPWMSeqValues.channel_2 = gPWMTopValue * gLED2State.g / UINT8_MAX;
@@ -156,14 +156,14 @@ void ledsSetLED2StateHSV(ColorHSV hsv)
     ledsUpdatePWMSeqValuesLED2();
 }
 
-void ledsShiftLED1State(void)
+static void ledsShiftLED1State(void)
 {
     // cos() is used for automatic periodic behavior
     gLED1State = UINT8_MAX * (0.5 - 0.5 * cos(2 * M_PI * gLED1ShiftTick++ * LED1_SHIFT_PERIOD_MS / gLED1FlashPeriod));
     ledsUpdatePWMSeqValuesLED1();
 }
 
-void ledsHandlerLED1Shift(void* p_context)
+static void ledsHandlerLED1Shift(void* p_context)
 {
     ledsShiftLED1State();
 }

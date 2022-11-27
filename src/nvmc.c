@@ -16,7 +16,7 @@
 #define MARK_COLOR 0x00000001
 #define MASK_COLOR 0x000000ff
 
-void nvmcAwaitWrite(void)
+static void nvmcAwaitWrite(void)
 {
     while(!nrfx_nvmc_write_done_check()){}
 }
@@ -31,7 +31,7 @@ void nvmcSetup(bool force)
     }
 }
 
-uint32_t nvmcColor2Word(ColorHSV color)
+static uint32_t nvmcColor2Word(ColorHSV color)
 {
     return (uint32_t)color.h << 24 |
            (uint32_t)color.s << 16 |
@@ -68,7 +68,7 @@ bool nvmcHasColor(void)
     return true;
 }
 
-ColorHSV nvmcWord2Color(uint32_t word)
+static ColorHSV nvmcWord2Color(uint32_t word)
 {
     ColorHSV color =
     {

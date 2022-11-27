@@ -5,22 +5,22 @@
 
 #define QUEUE_SIZE UINT8_MAX
 
-static volatile Event gQueue[QUEUE_SIZE];
+static Event gQueue[QUEUE_SIZE];
 
-static volatile uint8_t gIdxF = 0;
-static volatile uint8_t gIdxR = 0;
+static uint8_t gIdxF = 0;
+static uint8_t gIdxR = 0;
 
-bool queueIsFull(void)
+static bool queueIsFull(void)
 {
     return gIdxR == QUEUE_SIZE;
 }
 
-bool queueIsEmpty(void)
+static bool queueIsEmpty(void)
 {
     return gIdxF == gIdxR;
 }
 
-void queueShift(void)
+static void queueShift(void)
 {
     for(uint8_t idx = 0; idx < gIdxR - gIdxF; ++idx)
         gQueue[idx] = gQueue[gIdxF + idx];

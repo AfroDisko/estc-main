@@ -16,8 +16,8 @@ APP_TIMER_DEF(gTimerListener);
 
 APP_TIMER_DEF(gTimerDebounce);
 
-static volatile uint8_t gConfirmedPresses = 0;
-static volatile bool    gConfirmedPContin = false;
+static uint8_t gConfirmedPresses = 0;
+static bool    gConfirmedPContin = false;
 
 static const nrfx_gpiote_in_config_t gSwitchGPIOTEConfig =
 {
@@ -33,12 +33,12 @@ void switchSetupGPIO(void)
     nrf_gpio_cfg_input(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), NRF_GPIO_PIN_PULLUP);
 }
 
-LogicalState switchGetSwitchState(void)
+static LogicalState switchGetSwitchState(void)
 {
     return nrf_gpio_pin_read(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN)) == 0 ? LogicalStateOn : LogicalStateOff;
 }
 
-void switchHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+static void switchHandlerSW1(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
     switch(action)
     {
@@ -58,7 +58,7 @@ void switchSetupGPIOTE(void)
     nrfx_gpiote_in_event_enable(NRF_GPIO_PIN_MAP(SW1_PRT, SW1_PIN), true);
 }
 
-void switchHandlerListener(void* p_context)
+static void switchHandlerListener(void* p_context)
 {
     switch(gConfirmedPresses)
     {
@@ -82,7 +82,7 @@ void switchHandlerListener(void* p_context)
     gConfirmedPresses = 0;
 }
 
-void switchHandlerDebounce(void* p_context)
+static void switchHandlerDebounce(void* p_context)
 {
     if(switchGetSwitchState() == LogicalStateOn)
         ++gConfirmedPresses;
