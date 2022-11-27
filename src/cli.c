@@ -130,7 +130,7 @@ static void usbdHandler(app_usbd_class_inst_t const* p_inst, app_usbd_cdc_acm_us
 
     case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         do
-        {   
+        {
             if(gBufferEcho[0] == '\r' || gBufferEcho[0] == '\n')
             {
                 app_usbd_cdc_acm_write(&usbdInstance, "\r\n", 2);
@@ -143,7 +143,7 @@ static void usbdHandler(app_usbd_class_inst_t const* p_inst, app_usbd_cdc_acm_us
             }
             gWriteCallback = WriteCallbackEcho;
             return;
-            returnToEventEcho:                
+            returnToEventEcho:
         }
         while(app_usbd_cdc_acm_read(&usbdInstance, gBufferEcho, BUFFER_SIZE_ECHO) == NRF_SUCCESS);
         break;
