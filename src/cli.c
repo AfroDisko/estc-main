@@ -44,7 +44,7 @@ void cliSetup(void)
 
 static void cliBufferAppend(void)
 {
-    if(strlen(gBufferMain) < BUFFER_SIZE_MAIN - 1)
+    if(strlen(gBufferMain) + 1 < BUFFER_SIZE_MAIN)
         strcat(gBufferMain, gBufferEcho);
 }
 

@@ -135,7 +135,9 @@ int main(void)
     
     nvmcSetup(false);
 
+    #ifdef ESTC_USB_CLI_ENABLED
     cliSetup();
+    #endif
 
     if(nvmcHasColor())
         gCtx.color = nvmcLoadColor();
