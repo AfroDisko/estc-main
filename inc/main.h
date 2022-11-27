@@ -20,4 +20,6 @@ typedef struct
     uint8_t*  ptrColorParam;
 } Context;
 
+Context* mainGetCtx(void);
+
 #endif

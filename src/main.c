@@ -4,10 +4,6 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_log_backend_usb.h"
 
-#include "app_usbd.h"
-#include "app_usbd_serial_num.h"
-#include "app_usbd_cdc_acm.h"
-
 #include "nrfx_gpiote.h"
 
 #include "app_timer.h"
@@ -17,20 +13,41 @@
 #include "leds.h"
 #include "nvmc.h"
 #include "main.h"
+#include "cli.h"
 
 #define COLOR_MOD_PERIOD_MS 10
 
 APP_TIMER_DEF(gTimerColorMod);
 
-void modifyColorParam(void* p_context)
+Context gCtx =
+{
+    .mode = InputModeNone,
+    .color =
+    {
+        .h = 247,
+        .s = 255,
+        .v = 255
+    },
+    .ptrColorParam = NULL
+};
+
+Context* mainGetCtx(void)
+{
+    return &gCtx;
+}
+
+static void modifyColorParam(void* p_context)
 {
     Context* ctx = (Context*)p_context;
 
     static bool increase = true;
+
     if(*(ctx->ptrColorParam) == 0)
         increase = true;
+
     if(*(ctx->ptrColorParam) == 255)
         increase = false;
+
     if(ctx->mode == InputModeModifyH)
         increase = true;
 
@@ -39,10 +56,10 @@ void modifyColorParam(void* p_context)
     else
         --*(ctx->ptrColorParam);
 
-    ledsSetLED2State(ctx->color);
+    ledsSetLED2StateHSV(ctx->color);
 }
 
-void updateContext(Context* ctx)
+static void switchMode(Context* ctx)
 {
     switch(ctx->mode)
     {
@@ -71,7 +88,7 @@ void updateContext(Context* ctx)
     }
 }
 
-void updateState(Context* ctx)
+static void updateState(Context* ctx)
 {
     switch(ctx->mode)
     {
@@ -118,33 +135,23 @@ int main(void)
     
     nvmcSetup(false);
 
-    Context ctx =
-    {
-        .mode = InputModeNone,
-        .color =
-        {
-            .h = 247,
-            .s = 255,
-            .v = 255
-        },
-        .ptrColorParam = NULL
-    };
+    cliSetup();
 
     if(nvmcHasColor())
-        ctx.color = nvmcLoadColor();
-    ledsSetLED2State(ctx.color);
+        gCtx.color = nvmcLoadColor();
+    ledsSetLED2StateHSV(gCtx.color);
 
     while(true)
     {
         switch(queueEventDequeue())
         {
-        case EventSwitchPressedContin:
-            app_timer_start(gTimerColorMod, APP_TIMER_TICKS(COLOR_MOD_PERIOD_MS), &ctx);
+        case EventSwitchPressedDouble:
+            switchMode(&gCtx);
+            updateState(&gCtx);
             break;
 
-        case EventSwitchPressedDouble:
-            updateContext(&ctx);
-            updateState(&ctx);
+        case EventSwitchPressedContin:
+            app_timer_start(gTimerColorMod, APP_TIMER_TICKS(COLOR_MOD_PERIOD_MS), &gCtx);
             break;
 
         case EventSwitchReleased:

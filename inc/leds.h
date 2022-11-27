@@ -22,7 +22,9 @@ void ledsSetupPWM(void);
 
 void ledsSetLED1State(uint8_t state);
 
-void ledsSetLED2State(ColorHSV hsv);
+void ledsSetLED2StateRGB(ColorRGB rgb);
+
+void ledsSetLED2StateHSV(ColorHSV hsv);
 
 void ledsSetupLED1Timer(void);
 

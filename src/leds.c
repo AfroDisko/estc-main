@@ -144,7 +144,13 @@ void ledsSetLED1State(uint8_t state)
     ledsUpdatePWMSeqValuesLED1();
 }
 
-void ledsSetLED2State(ColorHSV hsv)
+void ledsSetLED2StateRGB(ColorRGB rgb)
+{
+    gLED2State = rgb;
+    ledsUpdatePWMSeqValuesLED2();
+}
+
+void ledsSetLED2StateHSV(ColorHSV hsv)
 {
     gLED2State = hsv2rgb(hsv);
     ledsUpdatePWMSeqValuesLED2();
