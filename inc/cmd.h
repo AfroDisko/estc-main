@@ -1,7 +1,7 @@
 #ifndef CMD_H
 #define CMD_H
 
-static const char gCmdResponseUnknownCmd[] = "Unknown command (type 'help' for help)\r\n";
+static const char gCmdResponseUnknownCmd[] = "Unknown command (enter 'help' for help)\r\n";
 
 static const char gCmdHelp[]               = "help";
 

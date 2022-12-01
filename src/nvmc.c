@@ -4,8 +4,10 @@
 
 #include "nvmc.h"
 
-// hard copied from nrf_bootloader_info.h since is not compile time const expr
-// #define BOOTLOADER_START_ADDR 0x3AC00
+#ifdef  BOOTLOADER_START_ADDR
+#undef  BOOTLOADER_START_ADDR
+#define BOOTLOADER_START_ADDR 0xE0000
+#endif
 
 #define APP_DATA_START_ADDR_P0 (BOOTLOADER_START_ADDR - NRF_DFU_APP_DATA_AREA_SIZE)
 #define APP_DATA_START_ADDR_P1 (APP_DATA_START_ADDR_P0 + 1 * CODE_PAGE_SIZE)

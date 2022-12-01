@@ -31,11 +31,6 @@ Context gCtx =
     .ptrColorParam = NULL
 };
 
-Context* mainGetCtx(void)
-{
-    return &gCtx;
-}
-
 static void modifyColorParam(void* p_context)
 {
     Context* ctx = (Context*)p_context;
@@ -132,7 +127,7 @@ int main(void)
 
     ledsSetupPWM();
     ledsSetupLED1Timer();
-    
+
     nvmcSetup(false);
 
     #ifdef ESTC_USB_CLI_ENABLED
@@ -145,19 +140,39 @@ int main(void)
 
     while(true)
     {
-        switch(queueEventDequeue())
+        Event event = queueEventDequeue();
+
+        switch(event.type)
         {
-        case EventSwitchPressedDouble:
-            switchMode(&gCtx);
-            updateState(&gCtx);
+        case EventSwitchPressed:
+            switch(event.data.num)
+            {
+            case 2:
+                switchMode(&gCtx);
+                updateState(&gCtx);
+                break;
+
+            default:
+                break;
+            }
             break;
 
-        case EventSwitchPressedContin:
+        case EventSwitchPressedContinuous:
             app_timer_start(gTimerColorMod, APP_TIMER_TICKS(COLOR_MOD_PERIOD_MS), &gCtx);
             break;
 
         case EventSwitchReleased:
             app_timer_stop(gTimerColorMod);
+            break;
+
+        case EventCliChangeColorRGB:
+            gCtx.color = rgb2hsv(event.data.rgb);
+            ledsSetLED2StateRGB(event.data.rgb);
+            break;
+
+        case EventCliChangeColorHSV:
+            gCtx.color = event.data.hsv;
+            ledsSetLED2StateHSV(event.data.hsv);
             break;
 
         default:
@@ -166,7 +181,5 @@ int main(void)
 
         NRF_LOG_PROCESS();
         LOG_BACKEND_USB_PROCESS();
-
-        __WFI();
     }
 }

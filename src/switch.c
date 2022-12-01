@@ -60,24 +60,15 @@ void switchSetupGPIOTE(void)
 
 static void switchHandlerListener(void* p_context)
 {
-    switch(gConfirmedPresses)
+    if(gConfirmedPresses > 0)
     {
-    case 1:
         if(switchGetSwitchState() == LogicalStateOn)
         {
             gConfirmedPContin = true;
-            queueEventEnqueue(EventSwitchPressedContin);
+            queueEventEnqueue((Event){EventSwitchPressedContinuous});
         }
         else
-            queueEventEnqueue(EventSwitchPressedSingle);
-        break;
-
-    case 2:
-        queueEventEnqueue(EventSwitchPressedDouble);
-        break;
-
-    default:
-        break;
+            queueEventEnqueue((Event){EventSwitchPressed, {.num = gConfirmedPresses}});
     }
     gConfirmedPresses = 0;
 }
@@ -89,7 +80,7 @@ static void switchHandlerDebounce(void* p_context)
     else if(gConfirmedPContin)
     {
         gConfirmedPContin = false;
-        queueEventEnqueue(EventSwitchReleased);
+        queueEventEnqueue((Event){EventSwitchReleased});
     }
 }
 

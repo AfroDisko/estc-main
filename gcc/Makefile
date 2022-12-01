@@ -8,10 +8,10 @@ DFU_PORT         ?= /dev/ttyACM0
 
 TARGETS          := nrf52840_xxaa
 
-ESTC_USB_CLI_ENABLED ?= 0
-
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := nrf52.ld
+
+ESTC_USB_CLI_ENABLED ?= 0
 
 # Source files common to all targets
 SRC_FILES += \
@@ -135,14 +135,13 @@ OPT = -O3 -g3
 # Uncomment the line below to enable link time optimization
 # OPT += -flto
 
-# C flags common to all targets
-CFLAGS += $(OPT)
-CFLAGS += -DUSE_APP_CONFIG
-CFLAGS += -DAPP_TIMER_V2
-CFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 ifeq ($(ESTC_USB_CLI_ENABLED), 1)
   CFLAGS += -DESTC_USB_CLI_ENABLED
 endif
+
+# C flags common to all targets
+CFLAGS += $(OPT)
+CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DBOARD_PCA10059
 # CFLAGS += -DBSP_DEFINES_ONLY
 CFLAGS += -DCONFIG_GPIO_AS_PINRESET

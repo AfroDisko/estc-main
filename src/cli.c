@@ -3,6 +3,7 @@
 
 #include "app_usbd_cdc_acm.h"
 
+#include "queue.h"
 #include "main.h"
 #include "leds.h"
 #include "cmd.h"
@@ -14,14 +15,13 @@
 #define COMMAND_WORD_NUM_MAX 4
 #define COMMAND_WORD_LEN_MAX 8
 
-static WriteCallback gWriteCallback = WriteCallbackNone;
-
 static char gBufferEcho[BUFFER_SIZE_ECHO];
 static char gBufferMain[BUFFER_SIZE_MAIN];
 
 static char gCommand[COMMAND_WORD_NUM_MAX][COMMAND_WORD_LEN_MAX];
 
-static void usbdHandler(app_usbd_class_inst_t const* p_inst, app_usbd_cdc_acm_user_event_t event);
+static void usbdHandler(app_usbd_class_inst_t const* p_inst,
+                        app_usbd_cdc_acm_user_event_t event);
 
 APP_USBD_CDC_ACM_GLOBAL_DEF(usbdInstance, usbdHandler,
                             CDC_ACM_COMM_INTERFACE, CDC_ACM_DATA_INTERFACE,
@@ -69,26 +69,28 @@ static void cliExecute(void)
 
     if(strcmp(gCommand[0], gCmdRgb) == 0)
     {
-        ColorHSV hsv = rgb2hsv((ColorRGB){atoi(gCommand[1]),
-                                          atoi(gCommand[2]),
-                                          atoi(gCommand[3])});
+        ColorRGB rgb =
+        {
+            .r = strtoul(gCommand[1], NULL, 10),
+            .g = strtoul(gCommand[2], NULL, 10),
+            .b = strtoul(gCommand[3], NULL, 10)
+        };
 
-        Context* ctx = mainGetCtx();
-        ctx->color = hsv;
-
-        ledsSetLED2StateHSV(hsv);
+        queueEventEnqueue((Event){EventCliChangeColorRGB, {.rgb = rgb}});
 
         return;
     }
 
     if(strcmp(gCommand[0], gCmdHsv) == 0)
     {
-        Context* ctx = mainGetCtx();
-        (ctx->color).h = atoi(gCommand[1]);
-        (ctx->color).s = atoi(gCommand[2]);
-        (ctx->color).v = atoi(gCommand[3]);
+        ColorHSV hsv =
+        {
+            .h = strtoul(gCommand[1], NULL, 10),
+            .s = strtoul(gCommand[2], NULL, 10),
+            .v = strtoul(gCommand[3], NULL, 10)
+        };
 
-        ledsSetLED2StateHSV(ctx->color);
+        queueEventEnqueue((Event){EventCliChangeColorHSV, {.hsv = hsv}});
 
         return;
     }
@@ -97,14 +99,29 @@ static void cliExecute(void)
         app_usbd_cdc_acm_write(&usbdInstance, gCmdResponseUnknownCmd, sizeof(gCmdResponseUnknownCmd));
 }
 
-static void cliBufferProcess(void)
+static bool cliCRLF(void)
 {
-    cliBufferParse();
-    cliExecute();
-    cliBufferReset();
+    return gBufferEcho[0] == '\r' || gBufferEcho[0] == '\n';
 }
 
-static void usbdHandler(app_usbd_class_inst_t const* p_inst, app_usbd_cdc_acm_user_event_t event)
+static void cliProcessInput(void)
+{
+    if(cliCRLF())
+    {
+        app_usbd_cdc_acm_write(&usbdInstance, "\r\n", 2);
+        cliBufferParse();
+        cliExecute();
+        cliBufferReset();
+    }
+    else
+    {
+        cliBufferAppend();
+        app_usbd_cdc_acm_write(&usbdInstance, gBufferMain + strlen(gBufferMain) - 1, 1);
+    }
+}
+
+static void usbdHandler(app_usbd_class_inst_t const* p_inst,
+                        app_usbd_cdc_acm_user_event_t event)
 {
     switch(event)
     {
@@ -116,36 +133,11 @@ static void usbdHandler(app_usbd_class_inst_t const* p_inst, app_usbd_cdc_acm_us
         break;
 
     case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
-        // looks like a very bad decision, but will suffice for now
-        switch(gWriteCallback)
-        {
-        case WriteCallbackEcho:
-            gWriteCallback = WriteCallbackNone;
-            goto returnToEventEcho;
-            break;
-
-        default:
-            break;
-        }
+        break;
 
     case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
-        do
-        {
-            if(gBufferEcho[0] == '\r' || gBufferEcho[0] == '\n')
-            {
-                app_usbd_cdc_acm_write(&usbdInstance, "\r\n", 2);
-                cliBufferProcess();
-            }
-            else
-            {
-                app_usbd_cdc_acm_write(&usbdInstance, gBufferEcho, BUFFER_SIZE_ECHO);
-                cliBufferAppend();
-            }
-            gWriteCallback = WriteCallbackEcho;
-            return;
-            returnToEventEcho:
-        }
-        while(app_usbd_cdc_acm_read(&usbdInstance, gBufferEcho, BUFFER_SIZE_ECHO) == NRF_SUCCESS);
+        app_usbd_cdc_acm_read(&usbdInstance, gBufferEcho, BUFFER_SIZE_ECHO);
+        cliProcessInput();
         break;
 
     default:

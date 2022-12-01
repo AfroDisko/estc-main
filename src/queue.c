@@ -44,7 +44,7 @@ Event queueEventDequeue(void)
     if(queueIsEmpty())
     {
         queueShift();
-        return EventDummy;
+        return (Event){EventNone};
     }
 
     return gQueue[gIdxF++];
