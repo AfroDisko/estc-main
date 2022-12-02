@@ -4,15 +4,17 @@
 #include "app_usbd_cdc_acm.h"
 
 #include "queue.h"
+#include "leds.h"
 #include "ledsutils.h"
 #include "cmd.h"
+#include "nvmc.h"
 #include "cli.h"
 
 #define BUFFER_SIZE_ECHO 1
-#define BUFFER_SIZE_MAIN 32
+#define BUFFER_SIZE_MAIN 256
 
-#define COMMAND_WORD_NUM_MAX 4
-#define COMMAND_WORD_LEN_MAX 8
+#define COMMAND_WORD_NUM_MAX 8
+#define COMMAND_WORD_LEN_MAX 32
 
 static char gBufferEcho[BUFFER_SIZE_ECHO];
 static char gBufferMain[BUFFER_SIZE_MAIN];
@@ -58,7 +60,7 @@ static void cliBufferParse(void)
     }
 }
 
-static void cliCommandSend(void)
+static void cliSendCommand(void)
 {
     if(strcmp(gCommand[0], gCmdHelp) == 0)
     {
@@ -75,7 +77,7 @@ static void cliCommandSend(void)
             .b = strtoul(gCommand[3], NULL, 10)
         };
 
-        queueEventEnqueue((Event){EventCliChangeColorRGB, {.rgb = rgb}});
+        queueEventEnqueue((Event){EventChangeColorRGB, {.rgb = rgb}});
 
         return;
     }
@@ -89,7 +91,56 @@ static void cliCommandSend(void)
             .v = strtoul(gCommand[3], NULL, 10)
         };
 
-        queueEventEnqueue((Event){EventCliChangeColorHSV, {.hsv = hsv}});
+        queueEventEnqueue((Event){EventChangeColorHSV, {.hsv = hsv}});
+
+        return;
+    }
+
+    if(strcmp(gCommand[0], gCmdColorAddRgb) == 0)
+    {
+        ColorRGB rgb =
+        {
+            .r = strtoul(gCommand[1], NULL, 10),
+            .g = strtoul(gCommand[2], NULL, 10),
+            .b = strtoul(gCommand[3], NULL, 10)
+        };
+        char mark = gCommand[4][0];
+
+        nvmcSaveColorRGBMarked(rgb, mark);
+
+        return;
+    }
+
+    if(strcmp(gCommand[0], gCmdColorAddCur) == 0)
+    {
+        ColorRGB rgb = ledsGetLED2State();
+        char mark = gCommand[1][0];
+
+        nvmcSaveColorRGBMarked(rgb, mark);
+
+        return;
+    }
+
+    if(strcmp(gCommand[0], gCmdColorSet) == 0)
+    {
+        char mark = gCommand[1][0];
+
+        if(nvmcHasColorRGBMarked(mark))
+        {
+            ColorRGB rgb = nvmcLoadColorRGBMarked(mark);
+            queueEventEnqueue((Event){EventChangeColorRGB, {.rgb = rgb}});
+        }
+        else
+            app_usbd_cdc_acm_write(&usbdInstance, gCmdResponseNoColor, sizeof(gCmdResponseNoColor));
+
+        return;
+    }
+
+    if(strcmp(gCommand[0], gCmdColorDel) == 0)
+    {
+        char mark = gCommand[1][0];
+
+        nvmcDeleteColorRGBMarked(mark);
 
         return;
     }
@@ -109,7 +160,7 @@ static void cliProcessInput(void)
     {
         app_usbd_cdc_acm_write(&usbdInstance, "\r\n", 2);
         cliBufferParse();
-        cliCommandSend();
+        cliSendCommand();
         cliBufferReset();
     }
     else

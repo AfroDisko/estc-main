@@ -126,6 +126,11 @@ void ledsSetupPWM(void)
     nrfx_pwm_simple_playback(&gPWMInstance, &gPWMSeq, 1, NRFX_PWM_FLAG_LOOP);
 }
 
+ColorRGB ledsGetLED2State(void)
+{
+    return gLED2State;
+}
+
 static void ledsUpdatePWMSeqValuesLED1(void)
 {
     gPWMSeqValues.channel_0 = gPWMTopValue * gLED1State / UINT8_MAX;

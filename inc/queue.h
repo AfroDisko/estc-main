@@ -9,8 +9,8 @@ typedef enum
     EventSwitchPressed,
     EventSwitchPressedContinuous,
     EventSwitchReleased,
-    EventCliChangeColorRGB,
-    EventCliChangeColorHSV
+    EventChangeColorRGB,
+    EventChangeColorHSV
 } EventType;
 
 typedef union

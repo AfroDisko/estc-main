@@ -88,7 +88,7 @@ static void updateState(Context* ctx)
     switch(ctx->mode)
     {
     case InputModeNone:
-        nvmcSaveColor(ctx->color);
+        nvmcSaveColorHSV(ctx->color);
         ledsFlashLED1Halt();
         ledsSetLED1State(0);
         break;
@@ -132,8 +132,8 @@ int main(void)
     cliSetup();
     #endif
 
-    if(nvmcHasColor())
-        gCtx.color = nvmcLoadColor();
+    if(nvmcHasColorHSV())
+        gCtx.color = nvmcLoadColorHSV();
     ledsSetLED2StateHSV(gCtx.color);
 
     app_timer_create(&gTimerColorMod, APP_TIMER_MODE_REPEATED, modifyColorParam);
@@ -149,6 +149,10 @@ int main(void)
         case EventSwitchPressed:
             switch(event.data.num)
             {
+            case 1:
+                nvmcSetup(true);
+                break;
+
             case 2:
                 switchMode(&gCtx);
                 updateState(&gCtx);
@@ -167,12 +171,12 @@ int main(void)
             app_timer_stop(gTimerColorMod);
             break;
 
-        case EventCliChangeColorRGB:
+        case EventChangeColorRGB:
             gCtx.color = rgb2hsv(event.data.rgb);
             ledsSetLED2StateRGB(event.data.rgb);
             break;
 
-        case EventCliChangeColorHSV:
+        case EventChangeColorHSV:
             gCtx.color = event.data.hsv;
             ledsSetLED2StateHSV(event.data.hsv);
             break;
