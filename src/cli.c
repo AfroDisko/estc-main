@@ -4,8 +4,7 @@
 #include "app_usbd_cdc_acm.h"
 
 #include "queue.h"
-#include "main.h"
-#include "leds.h"
+#include "ledsutils.h"
 #include "cmd.h"
 #include "cli.h"
 
@@ -59,7 +58,7 @@ static void cliBufferParse(void)
     }
 }
 
-static void cliExecute(void)
+static void cliCommandSend(void)
 {
     if(strcmp(gCommand[0], gCmdHelp) == 0)
     {
@@ -110,7 +109,7 @@ static void cliProcessInput(void)
     {
         app_usbd_cdc_acm_write(&usbdInstance, "\r\n", 2);
         cliBufferParse();
-        cliExecute();
+        cliCommandSend();
         cliBufferReset();
     }
     else

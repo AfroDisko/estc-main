@@ -69,8 +69,8 @@ static void switchHandlerListener(void* p_context)
         }
         else
             queueEventEnqueue((Event){EventSwitchPressed, {.num = gConfirmedPresses}});
+        gConfirmedPresses = 0;
     }
-    gConfirmedPresses = 0;
 }
 
 static void switchHandlerDebounce(void* p_context)

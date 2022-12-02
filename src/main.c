@@ -117,9 +117,7 @@ int main(void)
     NRF_LOG_DEFAULT_BACKENDS_INIT();
 
     nrfx_gpiote_init();
-
     app_timer_init();
-    app_timer_create(&gTimerColorMod, APP_TIMER_MODE_REPEATED, modifyColorParam);
 
     switchSetupGPIO();
     switchSetupGPIOTE();
@@ -138,10 +136,14 @@ int main(void)
         gCtx.color = nvmcLoadColor();
     ledsSetLED2StateHSV(gCtx.color);
 
+    app_timer_create(&gTimerColorMod, APP_TIMER_MODE_REPEATED, modifyColorParam);
+
     while(true)
     {
-        Event event = queueEventDequeue();
+        NRF_LOG_PROCESS();
+        LOG_BACKEND_USB_PROCESS();
 
+        Event event = queueEventDequeue();
         switch(event.type)
         {
         case EventSwitchPressed:
@@ -178,8 +180,5 @@ int main(void)
         default:
             break;
         }
-
-        NRF_LOG_PROCESS();
-        LOG_BACKEND_USB_PROCESS();
     }
 }
