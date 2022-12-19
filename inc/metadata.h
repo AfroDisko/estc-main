@@ -9,7 +9,6 @@
 #define METADATA_TYPE_COLOR_HSV       0x20
 #define METADATA_TYPE_COLOR_RGB_NAMED 0x30
 #define METADATA_TYPE_COLOR_HSV_NAMED 0x40
-#define METADATA_TYPE_STRING          0x50
 #define METADATA_TYPE_NONE            0xf0
 
 #define METADATA_STATE_DELETED        0x00
@@ -27,5 +26,7 @@ typedef struct
 } Metadata;
 
 bool metadataIsEqual(const Metadata* m1, const Metadata* m2);
+
+bool metadataIsCommon(const Metadata* m1, const Metadata* m2);
 
 #endif

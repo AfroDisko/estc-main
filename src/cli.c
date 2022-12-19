@@ -8,6 +8,7 @@
 #include "ledsutils.h"
 #include "cmd.h"
 #include "nvmc.h"
+#include "metadata.h"
 #include "cli.h"
 
 #define BUFFER_SIZE_ECHO 1
@@ -60,7 +61,7 @@ static void cliBufferParse(void)
     }
 }
 
-static void cliSendCommand(void)
+static void cliExecCommand(void)
 {
     if(strcmp(gCommand[0], gCmdHelp) == 0)
     {
@@ -76,9 +77,7 @@ static void cliSendCommand(void)
             .g = strtoul(gCommand[2], NULL, 10),
             .b = strtoul(gCommand[3], NULL, 10)
         };
-
         queueEventEnqueue((Event){EventChangeColorRGB, {.rgb = rgb}});
-
         return;
     }
 
@@ -90,58 +89,56 @@ static void cliSendCommand(void)
             .s = strtoul(gCommand[2], NULL, 10),
             .v = strtoul(gCommand[3], NULL, 10)
         };
-
         queueEventEnqueue((Event){EventChangeColorHSV, {.hsv = hsv}});
-
         return;
     }
 
     if(strcmp(gCommand[0], gCmdColorAddRgb) == 0)
     {
+        Metadata meta =
+        {
+            .type   = METADATA_TYPE_COLOR_RGB_NAMED,
+            .state  = METADATA_STATE_ACTIVE,
+            .length = 0
+        };
+        if(nvmcRecordCountMeta(1, meta) > 10)
+        {
+            app_usbd_cdc_acm_write(&usbdInstance, gCmdResponseNoSpace, sizeof(gCmdResponseNoSpace));
+            return;
+        }
         ColorRGB rgb =
         {
             .r = strtoul(gCommand[1], NULL, 10),
             .g = strtoul(gCommand[2], NULL, 10),
             .b = strtoul(gCommand[3], NULL, 10)
         };
-        char mark = gCommand[4][0];
-
-        nvmcSaveColorRGBMarked(rgb, mark);
-
+        nvmcSaveColorRGBNamed(rgb, gCommand[4]);
         return;
     }
 
     if(strcmp(gCommand[0], gCmdColorAddCur) == 0)
     {
         ColorRGB rgb = ledsGetLED2State();
-        char mark = gCommand[1][0];
-
-        nvmcSaveColorRGBMarked(rgb, mark);
-
+        nvmcSaveColorRGBNamed(rgb, gCommand[1]);
         return;
     }
 
     if(strcmp(gCommand[0], gCmdColorSet) == 0)
     {
-        char mark = gCommand[1][0];
-
-        if(nvmcHasColorRGBMarked(mark))
-        {
-            ColorRGB rgb = nvmcLoadColorRGBMarked(mark);
+        ColorRGB rgb;
+        nvmcRetCode retCode = nvmcLoadColorRGBNamed(&rgb, gCommand[1]);
+        if(retCode == nvmcRetCodeSuccess)
             queueEventEnqueue((Event){EventChangeColorRGB, {.rgb = rgb}});
-        }
-        else
+        if(retCode == nvmcRetCodeMetaNotFound)
             app_usbd_cdc_acm_write(&usbdInstance, gCmdResponseNoColor, sizeof(gCmdResponseNoColor));
-
         return;
     }
 
     if(strcmp(gCommand[0], gCmdColorDel) == 0)
     {
-        char mark = gCommand[1][0];
-
-        nvmcDeleteColorRGBMarked(mark);
-
+        nvmcRetCode retCode = nvmcDeleteColorRGBNamed(gCommand[1]);
+        if(retCode == nvmcRetCodeMetaNotFound)
+            app_usbd_cdc_acm_write(&usbdInstance, gCmdResponseNoColor, sizeof(gCmdResponseNoColor));
         return;
     }
 
@@ -160,7 +157,7 @@ static void cliProcessInput(void)
     {
         app_usbd_cdc_acm_write(&usbdInstance, "\r\n", 2);
         cliBufferParse();
-        cliSendCommand();
+        cliExecCommand();
         cliBufferReset();
     }
     else

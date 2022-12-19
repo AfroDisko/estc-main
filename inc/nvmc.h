@@ -4,6 +4,14 @@
 #include <stdbool.h>
 
 #include "ledsutils.h"
+#include "metadata.h"
+
+typedef enum
+{
+    nvmcRetCodeSuccess,
+    nvmcRetCodeBeyondPage,
+    nvmcRetCodeMetaNotFound
+} nvmcRetCode;
 
 void nvmcSetup(bool force);
 
@@ -11,12 +19,12 @@ void nvmcSaveColorHSV(ColorHSV hsv);
 
 void nvmcLoadColorHSV(ColorHSV* hsv);
 
-void nvmcSaveColorRGBMarked(ColorRGB rgb, char mark);
+void nvmcSaveColorRGBNamed(ColorRGB rgb, const char* name);
 
-bool nvmcHasColorRGBMarked(char mark);
+nvmcRetCode nvmcLoadColorRGBNamed(ColorRGB* rgb, const char* mark);
 
-ColorRGB nvmcLoadColorRGBMarked(char mark);
+nvmcRetCode nvmcDeleteColorRGBNamed(const char* name);
 
-void nvmcDeleteColorRGBMarked(char mark);
+uint32_t nvmcRecordCountMeta(uint8_t pageIdx, Metadata metaRef);
 
 #endif

@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "nrf_bootloader_info.h"
 #include "nrf_dfu_types.h"
 #include "nrfx_nvmc.h"
@@ -20,12 +22,7 @@
 
 #define OFFSET_DATA 2
 
-typedef enum
-{
-    nvmcRetCodeSuccess,
-    nvmcRetCodeBeyondPage,
-    nvmcRetCodeMetaNotFound
-} nvmcRetCode;
+#define DATA_BUFFER_SIZE UINT8_MAX
 
 static const uint32_t gAppDataStartAddr[] =
 {
@@ -119,11 +116,11 @@ static nvmcRetCode nvmcRecordFindLast(uint8_t pageIdx, uint32_t* addr)
     {
         addrCurr = addrNext;
         addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
-        if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
-        {
-            *addr = addrCurr;
-            return nvmcRetCodeSuccess;
-        }
+        // if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+        // {
+        //     *addr = addrCurr;
+        //     return nvmcRetCodeSuccess;
+        // }
 
         metaNext = nvmcMetadataRead(addrNext);
     }
@@ -146,8 +143,8 @@ static nvmcRetCode nvmcRecordFindLastMeta(uint8_t pageIdx, uint32_t* addr, Metad
     {
         addrCurr = addrNext;
         addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
-        if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
-            return nvmcRetCodeSuccess;
+        // if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+        //     return nvmcRetCodeSuccess;
 
         metaCurr = nvmcMetadataRead(addrCurr);
         metaNext = nvmcMetadataRead(addrNext);
@@ -174,14 +171,41 @@ static nvmcRetCode nvmcRecordFindFree(uint8_t pageIdx, uint32_t* addr)
         addrCurr = addrNext;
         addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
 
-        if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
-            return nvmcRetCodeBeyondPage;
+        // if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+        //     return nvmcRetCodeBeyondPage;
 
         metaNext = nvmcMetadataRead(addrNext);
     }
 
     *addr = addrNext;
     return nvmcRetCodeSuccess;
+}
+
+uint32_t nvmcRecordCountMeta(uint8_t pageIdx, Metadata metaRef)
+{
+    uint32_t addrCurr = gAppDataStartAddr[pageIdx];
+    uint32_t addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+
+    Metadata metaCurr = nvmcMetadataRead(addrCurr);
+    Metadata metaNext = nvmcMetadataRead(addrNext);
+
+    uint32_t cntr = 0;
+
+    while(!metadataIsEqual(&metaNext, &gMetadataNone))
+    {
+        addrCurr = addrNext;
+        addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+        // if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+        //     return nvmcRetCodeSuccess;
+
+        metaCurr = nvmcMetadataRead(addrCurr);
+        metaNext = nvmcMetadataRead(addrNext);
+
+        if(metadataIsCommon(&metaCurr, &metaRef))
+            ++cntr;
+    }
+
+    return cntr;
 }
 
 void nvmcSaveColorHSV(ColorHSV hsv)
@@ -200,7 +224,7 @@ void nvmcSaveColorHSV(ColorHSV hsv)
         .length = 3
     };
 
-    uint8_t data[3];
+    uint8_t data[DATA_BUFFER_SIZE];
     data[0] = hsv.h;
     data[1] = hsv.s;
     data[2] = hsv.v;
@@ -226,49 +250,69 @@ void nvmcLoadColorHSV(ColorHSV* hsv)
     }
 }
 
-// void nvmcSaveColorRGBNamed(ColorRGB rgb, char* name)
-// {
+void nvmcSaveColorRGBNamed(ColorRGB rgb, const char* name)
+{
+    uint32_t addr;
+    if(nvmcRecordFindFree(1, &addr) == nvmcRetCodeBeyondPage)
+    {
+        nvmcPageErase(1);
+        nvmcRecordFindFree(1, &addr);
+    }
 
-// }
+    Metadata meta =
+    {
+        .type   = METADATA_TYPE_COLOR_RGB_NAMED,
+        .state  = METADATA_STATE_ACTIVE,
+        .length = 3 + strlen(name)
+    };
 
-// bool nvmcHasColorRGBMarked(char mark)
-// {
-//     uint32_t addr = APP_DATA_START_ADDR_P1;
-//     while((*(uint32_t*)addr & MASK_COLOR) != mark)
-//     {
-//         if(addr == APP_DATA_START_ADDR_P2)
-//             return false;
+    uint8_t data[DATA_BUFFER_SIZE];
+    data[0] = rgb.r;
+    data[1] = rgb.g;
+    data[2] = rgb.b;
+    strcpy((char*)&data[3], name);
 
-//         addr += 4;
-//     }
+    nvmcRecordWrite(1, addr, meta, data);
+}
 
-//     return true;
-// }
+nvmcRetCode nvmcLoadColorRGBNamed(ColorRGB* rgb, const char* name)
+{
+    Metadata meta =
+    {
+        .type   = METADATA_TYPE_COLOR_RGB_NAMED,
+        .state  = METADATA_STATE_ACTIVE,
+        .length = 3 + strlen(name)
+    };
 
-// ColorRGB nvmcLoadColorRGBMarked(char mark)
-// {
-//     if(!nvmcHasColorRGBMarked(mark))
-//         return (ColorRGB){0, 0, 0};
+    uint32_t addr;
+    nvmcRetCode retCode = nvmcRecordFindLastMeta(1, &addr, meta);
+    if(retCode == nvmcRetCodeSuccess)
+    {
+        rgb->r = *(uint8_t*)(addr + OFFSET_DATA);
+        rgb->g = *(uint8_t*)(addr + OFFSET_DATA + 1);
+        rgb->b = *(uint8_t*)(addr + OFFSET_DATA + 2);
+    }
 
-//     uint32_t addr = APP_DATA_START_ADDR_P1;
-//     while((*(uint32_t*)addr & MASK_COLOR) != mark)
-//     {
-//         addr += 4;
-//     }
+    return retCode;
+}
 
-//     return nvmcWord2ColorRGB(*(uint32_t*)addr);
-// }
+nvmcRetCode nvmcDeleteColorRGBNamed(const char* name)
+{
+    Metadata meta =
+    {
+        .type   = METADATA_TYPE_COLOR_RGB_NAMED,
+        .state  = METADATA_STATE_ACTIVE,
+        .length = 3 + strlen(name)
+    };
 
-// void nvmcDeleteColorRGBMarked(char mark)
-// {
-//     if(!nvmcHasColorRGBMarked(mark))
-//         return;
+    uint32_t addr;
+    nvmcRetCode retCode = nvmcRecordFindLastMeta(1, &addr, meta);
 
-//     uint32_t addr = APP_DATA_START_ADDR_P1;
-//     while((*(uint32_t*)addr & MASK_COLOR) != mark)
-//     {
-//         addr += 4;
-//     }
-//     nrfx_nvmc_word_write(addr, *(uint32_t*)addr & MARK_COLOR_DEL);
-//     nvmcAwaitWrite();
-// }
+    if(retCode == nvmcRetCodeSuccess)
+    {
+        meta.state = METADATA_STATE_DELETED;
+        nvmcMetadataWrite(addr, meta);
+    }
+
+    return retCode;
+}

@@ -11,7 +11,7 @@ TARGETS          := nrf52840_xxaa
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := nrf52.ld
 
-ESTC_USB_CLI_ENABLED ?= 0
+ESTC_USB_CLI_ENABLED ?= 1
 
 # Source files common to all targets
 SRC_FILES += \
