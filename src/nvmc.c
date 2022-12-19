@@ -2,9 +2,10 @@
 #include "nrf_dfu_types.h"
 #include "nrfx_nvmc.h"
 
-#include "nvmc.h"
-
 #include "nrf_log.h"
+
+#include "metadata.h"
+#include "nvmc.h"
 
 #ifdef  BOOTLOADER_START_ADDR
 #undef  BOOTLOADER_START_ADDR
@@ -17,13 +18,14 @@
 
 #define APP_DATA_PAGES_NUM 3
 
-#define WORD_EMPTY 0xffffffff
+#define OFFSET_DATA 2
 
-#define MASK_COLOR 0x000000ff
-
-#define MARK_COLOR_RGB 0x00000001
-#define MARK_COLOR_HSV 0x00000010
-#define MARK_COLOR_DEL 0x00000011
+typedef enum
+{
+    nvmcRetCodeSuccess,
+    nvmcRetCodeBeyondPage,
+    nvmcRetCodeMetaNotFound
+} nvmcRetCode;
 
 static const uint32_t gAppDataStartAddr[] =
 {
@@ -32,169 +34,241 @@ static const uint32_t gAppDataStartAddr[] =
     APP_DATA_START_ADDR_P2
 };
 
+static const Metadata gMetadataNone =
+{
+    .type   = METADATA_TYPE_NONE,
+    .state  = METADATA_STATE_NONE,
+    .length = UINT8_MAX
+};
+
+static const Metadata gMetadataPage =
+{
+    .type   = METADATA_TYPE_PAGE_INFO,
+    .state  = METADATA_STATE_ACTIVE,
+    .length = 0
+};
+
 static void nvmcAwaitWrite(void)
 {
     while(!nrfx_nvmc_write_done_check()){}
 }
 
-static void nvmcErasePage(uint8_t pageIdx)
+static void nvmcMetadataWrite(uint32_t addr, Metadata meta)
+{
+    uint8_t bytes[2];
+    bytes[0] = (meta.type & METADATA_MASK_TYPE) | (meta.state & METADATA_MASK_STATE);
+    bytes[1] = meta.length;
+
+    nrfx_nvmc_bytes_write(addr, bytes, 2);
+    nvmcAwaitWrite();
+}
+
+static Metadata nvmcMetadataRead(uint32_t addr)
+{
+    Metadata meta =
+    {
+        .type   = *(uint8_t*)addr & METADATA_MASK_TYPE,
+        .state  = *(uint8_t*)addr & METADATA_MASK_STATE,
+        .length = *(uint8_t*)(addr + 1)
+    };
+    return meta;
+}
+
+static uint32_t nvmcGetNextAddr(uint8_t pageIdx, uint32_t addrCurr)
+{
+    Metadata meta = nvmcMetadataRead(addrCurr);
+    return addrCurr + OFFSET_DATA + meta.length;
+}
+
+static void nvmcPageErase(uint8_t pageIdx)
 {
     nrfx_nvmc_page_erase(gAppDataStartAddr[pageIdx]);
-    nrfx_nvmc_word_write(gAppDataStartAddr[pageIdx], 0);
-    nvmcAwaitWrite();
+    nvmcMetadataWrite(gAppDataStartAddr[pageIdx], gMetadataPage);
 }
 
 void nvmcSetup(bool force)
 {
     for(uint8_t pageIdx = 0; pageIdx < APP_DATA_PAGES_NUM; ++pageIdx)
-        if((*(uint32_t*)gAppDataStartAddr[pageIdx]) != 0 || force)
-            nvmcErasePage(pageIdx);
+    {
+        Metadata meta = nvmcMetadataRead(gAppDataStartAddr[pageIdx]);
+        if(!metadataIsEqual(&meta, &gMetadataPage) || force)
+            nvmcPageErase(pageIdx);
+    }
 }
 
-static uint32_t nvmcColorRGB2Word(ColorRGB rgb, char mark)
+static nvmcRetCode nvmcRecordWrite(uint8_t pageIdx, uint32_t addr, Metadata meta, const uint8_t* data)
 {
-    return (uint32_t)rgb.r << 24 |
-           (uint32_t)rgb.g << 16 |
-           (uint32_t)rgb.b << 8  |
-           mark;
+    if(OFFSET_DATA + meta.length > gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE - addr)
+        return nvmcRetCodeBeyondPage;
+
+    nvmcMetadataWrite(addr, meta);
+    nrfx_nvmc_bytes_write(addr + OFFSET_DATA, data, meta.length);
+    nvmcAwaitWrite();
+
+    return nvmcRetCodeSuccess;
 }
 
-static uint32_t nvmcColorHSV2Word(ColorHSV hsv, char mark)
+static nvmcRetCode nvmcRecordFindLast(uint8_t pageIdx, uint32_t* addr)
 {
-    return (uint32_t)hsv.h << 24 |
-           (uint32_t)hsv.s << 16 |
-           (uint32_t)hsv.v << 8  |
-           mark;
+    uint32_t addrCurr = gAppDataStartAddr[pageIdx];
+    uint32_t addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+
+    Metadata metaNext = nvmcMetadataRead(addrNext);
+
+    while(!metadataIsEqual(&metaNext, &gMetadataNone))
+    {
+        addrCurr = addrNext;
+        addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+        if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+        {
+            *addr = addrCurr;
+            return nvmcRetCodeSuccess;
+        }
+
+        metaNext = nvmcMetadataRead(addrNext);
+    }
+
+    *addr = addrCurr;
+    return nvmcRetCodeSuccess;
+}
+
+static nvmcRetCode nvmcRecordFindLastMeta(uint8_t pageIdx, uint32_t* addr, Metadata metaRef)
+{
+    uint32_t addrCurr = gAppDataStartAddr[pageIdx];
+    uint32_t addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+
+    Metadata metaCurr = nvmcMetadataRead(addrCurr);
+    Metadata metaNext = nvmcMetadataRead(addrNext);
+
+    *addr = gAppDataStartAddr[pageIdx];
+
+    while(!metadataIsEqual(&metaNext, &gMetadataNone))
+    {
+        addrCurr = addrNext;
+        addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+        if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+            return nvmcRetCodeSuccess;
+
+        metaCurr = nvmcMetadataRead(addrCurr);
+        metaNext = nvmcMetadataRead(addrNext);
+
+        if(metadataIsEqual(&metaCurr, &metaRef))
+            *addr = addrCurr;
+    }
+
+    if(*addr > gAppDataStartAddr[pageIdx])
+        return nvmcRetCodeSuccess;
+    else
+        return nvmcRetCodeMetaNotFound;
+}
+
+static nvmcRetCode nvmcRecordFindFree(uint8_t pageIdx, uint32_t* addr)
+{
+    uint32_t addrCurr = gAppDataStartAddr[pageIdx];
+    uint32_t addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+
+    Metadata metaNext = nvmcMetadataRead(addrNext);
+
+    while(!metadataIsEqual(&metaNext, &gMetadataNone))
+    {
+        addrCurr = addrNext;
+        addrNext = nvmcGetNextAddr(pageIdx, addrCurr);
+
+        if(addrNext >= gAppDataStartAddr[pageIdx] + CODE_PAGE_SIZE)
+            return nvmcRetCodeBeyondPage;
+
+        metaNext = nvmcMetadataRead(addrNext);
+    }
+
+    *addr = addrNext;
+    return nvmcRetCodeSuccess;
 }
 
 void nvmcSaveColorHSV(ColorHSV hsv)
 {
-    uint32_t addr = APP_DATA_START_ADDR_P0;
-    while(*(uint32_t*)addr != WORD_EMPTY)
+    uint32_t addr;
+    if(nvmcRecordFindFree(0, &addr) == nvmcRetCodeBeyondPage)
     {
-        if(addr == APP_DATA_START_ADDR_P1)
-        {
-            nvmcErasePage(0);
-            nvmcSaveColorHSV(hsv);
-        }
-
-        addr += 4;
-    }
-    nrfx_nvmc_word_write(addr, nvmcColorHSV2Word(hsv, MARK_COLOR_HSV));
-    nvmcAwaitWrite();
-}
-
-bool nvmcHasColorHSV(void)
-{
-    uint32_t addr = APP_DATA_START_ADDR_P0;
-    while((*(uint32_t*)addr & MASK_COLOR) != MARK_COLOR_HSV)
-    {
-        if(addr == APP_DATA_START_ADDR_P1)
-            return false;
-
-        addr += 4;
+        nvmcPageErase(0);
+        nvmcRecordFindFree(0, &addr);
     }
 
-    return true;
-}
-
-static ColorRGB nvmcWord2ColorRGB(uint32_t word)
-{
-    ColorRGB rgb =
+    Metadata meta =
     {
-        .r = (word & 0xff000000) >> 24,
-        .g = (word & 0x00ff0000) >> 16,
-        .b = (word & 0x0000ff00) >> 8
+        .type   = METADATA_TYPE_COLOR_HSV,
+        .state  = METADATA_STATE_ACTIVE,
+        .length = 3
     };
 
-    return rgb;
+    uint8_t data[3];
+    data[0] = hsv.h;
+    data[1] = hsv.s;
+    data[2] = hsv.v;
+
+    nvmcRecordWrite(0, addr, meta, data);
 }
 
-static ColorHSV nvmcWord2ColorHSV(uint32_t word)
+void nvmcLoadColorHSV(ColorHSV* hsv)
 {
-    ColorHSV hsv =
+    Metadata meta =
     {
-        .h = (word & 0xff000000) >> 24,
-        .s = (word & 0x00ff0000) >> 16,
-        .v = (word & 0x0000ff00) >> 8
+        .type   = METADATA_TYPE_COLOR_HSV,
+        .state  = METADATA_STATE_ACTIVE,
+        .length = 3
     };
 
-    return hsv;
-}
-
-ColorHSV nvmcLoadColorHSV(void)
-{
-    if(!nvmcHasColorHSV())
-        return (ColorHSV){0, 0, 0};
-
-    uint32_t addr = APP_DATA_START_ADDR_P0;
-    while(*(uint32_t*)(addr + 4) != WORD_EMPTY)
+    uint32_t addr;
+    if(nvmcRecordFindLastMeta(0, &addr, meta) == nvmcRetCodeSuccess)
     {
-        addr += 4;
+        hsv->h = *(uint8_t*)(addr + OFFSET_DATA);
+        hsv->s = *(uint8_t*)(addr + OFFSET_DATA + 1);
+        hsv->v = *(uint8_t*)(addr + OFFSET_DATA + 2);
     }
-
-    return nvmcWord2ColorHSV(*(uint32_t*)addr);
 }
 
-void nvmcSaveColorRGBMarked(ColorRGB rgb, char mark)
-{
-    uint32_t addr = APP_DATA_START_ADDR_P1;
-    uint32_t cntr = UINT32_MAX;
-    while(*(uint32_t*)addr != WORD_EMPTY)
-    {
-        if((*(uint32_t*)addr & MASK_COLOR) != MARK_COLOR_DEL)
-            ++cntr;
-        if(cntr > 10)
-        {
-            nvmcErasePage(1);
-            nvmcSaveColorRGBMarked(rgb, mark);
-        }
+// void nvmcSaveColorRGBNamed(ColorRGB rgb, char* name)
+// {
 
-        addr += 4;
-    }
-    NRF_LOG_INFO("%u %c", addr, mark);
-    nrfx_nvmc_word_write(addr, nvmcColorRGB2Word(rgb, mark));
-    nvmcAwaitWrite();
-}
+// }
 
-bool nvmcHasColorRGBMarked(char mark)
-{
-    uint32_t addr = APP_DATA_START_ADDR_P1;
-    while((*(uint32_t*)addr & MASK_COLOR) != mark)
-    {
-        if(addr == APP_DATA_START_ADDR_P2)
-            return false;
+// bool nvmcHasColorRGBMarked(char mark)
+// {
+//     uint32_t addr = APP_DATA_START_ADDR_P1;
+//     while((*(uint32_t*)addr & MASK_COLOR) != mark)
+//     {
+//         if(addr == APP_DATA_START_ADDR_P2)
+//             return false;
 
-        addr += 4;
-    }
+//         addr += 4;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
-ColorRGB nvmcLoadColorRGBMarked(char mark)
-{
-    if(!nvmcHasColorRGBMarked(mark))
-        return (ColorRGB){0, 0, 0};
+// ColorRGB nvmcLoadColorRGBMarked(char mark)
+// {
+//     if(!nvmcHasColorRGBMarked(mark))
+//         return (ColorRGB){0, 0, 0};
 
-    uint32_t addr = APP_DATA_START_ADDR_P1;
-    while((*(uint32_t*)addr & MASK_COLOR) != mark)
-    {
-        addr += 4;
-    }
+//     uint32_t addr = APP_DATA_START_ADDR_P1;
+//     while((*(uint32_t*)addr & MASK_COLOR) != mark)
+//     {
+//         addr += 4;
+//     }
 
-    return nvmcWord2ColorRGB(*(uint32_t*)addr);
-}
+//     return nvmcWord2ColorRGB(*(uint32_t*)addr);
+// }
 
-void nvmcDeleteColorRGBMarked(char mark)
-{
-    if(!nvmcHasColorRGBMarked(mark))
-        return;
+// void nvmcDeleteColorRGBMarked(char mark)
+// {
+//     if(!nvmcHasColorRGBMarked(mark))
+//         return;
 
-    uint32_t addr = APP_DATA_START_ADDR_P1;
-    while((*(uint32_t*)addr & MASK_COLOR) != mark)
-    {
-        addr += 4;
-    }
-    nrfx_nvmc_word_write(addr, *(uint32_t*)addr & MARK_COLOR_DEL);
-    nvmcAwaitWrite();
-}
+//     uint32_t addr = APP_DATA_START_ADDR_P1;
+//     while((*(uint32_t*)addr & MASK_COLOR) != mark)
+//     {
+//         addr += 4;
+//     }
+//     nrfx_nvmc_word_write(addr, *(uint32_t*)addr & MARK_COLOR_DEL);
+//     nvmcAwaitWrite();
+// }

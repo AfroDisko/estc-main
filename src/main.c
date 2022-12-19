@@ -132,8 +132,7 @@ int main(void)
     cliSetup();
     #endif
 
-    if(nvmcHasColorHSV())
-        gCtx.color = nvmcLoadColorHSV();
+    nvmcLoadColorHSV(&gCtx.color);
     ledsSetLED2StateHSV(gCtx.color);
 
     app_timer_create(&gTimerColorMod, APP_TIMER_MODE_REPEATED, modifyColorParam);

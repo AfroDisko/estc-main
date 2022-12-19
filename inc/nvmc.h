@@ -9,9 +9,7 @@ void nvmcSetup(bool force);
 
 void nvmcSaveColorHSV(ColorHSV hsv);
 
-bool nvmcHasColorHSV(void);
-
-ColorHSV nvmcLoadColorHSV(void);
+void nvmcLoadColorHSV(ColorHSV* hsv);
 
 void nvmcSaveColorRGBMarked(ColorRGB rgb, char mark);
 
